@@ -53,9 +53,10 @@
   (cffi:with-foreign-objects ((minor 'om-uint32)
                               (output-name 'gss-buffer-desc)
                               (output-type 'gss-oid))
-    (let ((status (gss-display-name minor (cffi:pointer-address name) output-name output-type)))
-      (format t "status=~s, minor=~s, errors=~s~%"
-              status (cffi:mem-ref minor 'om-uint32) (errors-as-string status minor)))))
+    (let ((status (gss-display-name minor (cffi:mem-ref name 'gss-name-t) output-name output-type)))
+      (unless (zerop status)
+        (error "Error when calling gss-display-name: ~s" (errors-as-string status minor)))
+      (cffi:convert-from-foreign (cffi:foreign-slot-value output-name 'gss-buffer-desc 'value) :string))))
 
 (defun errors-as-string (major-status minor-status)
   (declare (ignore minor-status))
