@@ -32,6 +32,10 @@
   (minor-status (:pointer om-uint32))
   (buffer (:pointer gss-buffer-desc)))
 
+(cffi:defcfun ("gss_release_name" gss-release-name) om-uint32
+  (minor-status (:pointer om-uint32))
+  (name (:pointer gss-name-t)))
+
 (cffi:defcfun ("gss_init_sec_context" gss-init-sec-context) om-uint32
   (minor-status (:pointer om-uint32))
   (initiator-cred-handle gss-cred-id-t)

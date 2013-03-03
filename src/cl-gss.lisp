@@ -2,6 +2,28 @@
 
 (declaim #.*compile-decl*)
 
+(defclass gss-memory-mixin ()
+  ((ptr :reader gss-memory-mixin-ptr
+        :initarg :ptr)))
+
+(defclass name (gss-memory-mixin)
+  ())
+
+(defmethod initialize-instance :after ((obj name) &key &allow-other-keys)
+  (let ((ptr (gss-memory-mixin-ptr obj)))
+    (let ((out *standard-output*))
+      (trivial-garbage:finalize obj #'(lambda ()
+                                        (format out "releasing ~s~%" ptr)
+                                        (gss-call m (gss-release-name m ptr)))))))
+
+(defgeneric release-gss-object (value)
+  (:method ((value name))
+    (format *error-output* "explicit release is not currently supported~%")))
+
+(defgeneric resolve-gss-ptr (value)
+  (:method ((value gss-memory-mixin)) (gss-memory-mixin-ptr value))
+  (:method ((value t)) value))
+
 (defun calling-error-p (code)
   (not (zerop (logand code (ash gss-c-calling-error-mask gss-c-calling-error-offset)))))
 
@@ -20,36 +42,25 @@
     `(cffi:with-foreign-objects ((,minor-sym 'om-uint32))
        (let ((,status-sym ,form))
          (when (error-p ,status-sym)
-           (error "Call failed: ~s~%~s" ',form (errors-as-string ,status-sym ,minor-sym)))))))
-
-#+nil(defun make-name (name-string)
-  (let ((output-name (cffi:foreign-alloc 'gss-name-t)))
-    (cffi:with-foreign-string (foreign-name-string name-string)
-      (cffi:with-foreign-objects ((minor 'om-uint32)
-                                  (buf 'gss-buffer-desc))
-        (setf (cffi:foreign-slot-value buf 'gss-buffer-desc 'length) (1+ (length name-string)))
-        (setf (cffi:foreign-slot-value buf 'gss-buffer-desc 'value) foreign-name-string)
-        (let ((status (gss-import-name minor
-                                       buf
-                                       *gss-c-nt-hostbased-service*
-                                       output-name)))
-          (format t "status = ~s, minor = ~s~%" status (cffi:mem-ref minor 'om-uint32)))
-        output-name))))
+           (error "Call failed: ~s~%~s" ',form (errors-as-string ,status-sym
+                                                                 (cffi:mem-ref ,minor-sym 'om-uint32))))
+         ,status-sym))))
 
 (defun make-name (name-string)
+  (check-type name-string string)
   (let ((output-name (cffi:foreign-alloc 'gss-name-t)))
     (cffi:with-foreign-string (foreign-name-string name-string)
       (cffi:with-foreign-objects ((buf 'gss-buffer-desc))
         (setf (cffi:foreign-slot-value buf 'gss-buffer-desc 'length) (1+ (length name-string)))
         (setf (cffi:foreign-slot-value buf 'gss-buffer-desc 'value) foreign-name-string)
         (gss-call minor (gss-import-name minor buf *gss-c-nt-hostbased-service* output-name))
-        output-name))))
+        (make-instance 'name :ptr output-name)))))
 
 (defun name-to-string (name)
   (cffi:with-foreign-objects ((minor 'om-uint32)
                               (output-name 'gss-buffer-desc)
                               (output-type 'gss-oid))
-    (let ((status (gss-display-name minor (cffi:mem-ref name 'gss-name-t) output-name output-type)))
+    (let ((status (gss-display-name minor (cffi:mem-ref (resolve-gss-ptr name) 'gss-name-t) output-name output-type)))
       (unless (zerop status)
         (error "Error when calling gss-display-name: ~s" (errors-as-string status minor)))
       (cffi:convert-from-foreign (cffi:foreign-slot-value output-name 'gss-buffer-desc 'value) :string))))
@@ -59,13 +70,14 @@
   (unless (zerop major-status)
     (cffi:with-foreign-objects ((message-context 'om-uint32))
       (loop
+         repeat 8 ; Prevent heap overflow if the loop never exits
          collect (cffi:with-foreign-objects ((minor 'om-uint32)
                                              (status-output 'gss-buffer-desc))
                    (let ((status (gss-display-status minor major-status gss-c-gss-code gss-c-no-oid
                                                      message-context status-output)))
                      (unwind-protect
                           (progn
-                            (unless (zerop status)
+                            (when (error-p status)
                               (error "call to gss-display-status failed with status=~s" status))
                             (cffi:convert-from-foreign (cffi:foreign-slot-value status-output
                                                                                 'gss-buffer-desc
@@ -74,7 +86,7 @@
          until (zerop (cffi:mem-ref message-context 'om-uint32))))))
 
 (defun init-sec (target)
-  (let ((name (make-name target)))
+  (let ((name (if (stringp target) (make-name target) (resolve-gss-ptr target))))
     (cffi:with-foreign-objects ((context 'gss-ctx-id-t)
                                 (input-token 'gss-buffer-desc)
                                 (actual-mech-type 'gss-oid)
