@@ -2,60 +2,24 @@
 
 (declaim #.*compile-decl*)
 
-(cffi:define-foreign-library libgssapi
-  (:darwin "libgssapi_krb5.dylib")
-  (:unix (:or "libgssapi_krb5.so" "libgss.so")))
+(defun calling-error-p (code)
+  (not (zerop (logand code (ash gss-c-calling-error-mask gss-c-calling-error-offset)))))
 
-(cffi:use-foreign-library libgssapi)
+(defun routine-error-p (code)
+  (not (zerop (logand code (ash gss-c-routine-error-mask gss-c-routine-error-offset)))))
 
-(cffi:defcfun ("gss_import_name" gss-import-name) om-uint32
-  (minor-status (:pointer om-uint32))
-  (input-name-buffer (:pointer gss-buffer-desc))
-  (input-name-type gss-oid)
-  (output-name (:pointer gss-name-t)))
+(defun supplementary-info-p (code)
+  (not (zerop (logand code (ash gss-c-supplementary-mask gss-c-supplementary-offset)))))
 
-(cffi:defcfun ("gss_display_name" gss-display-name) om-uint32
-  (minor-status (:pointer om-uint32))
-  (name gss-name-t)
-  (output-name (:pointer gss-buffer-desc))
-  (output-type (:pointer gss-oid)))
-
-(cffi:defcfun ("gss_display_status" gss-display-status) om-uint32
-  (minor-status (:pointer om-uint32))
-  (status-value-input om-uint32)
-  (status-type :int)
-  (mech-type gss-oid)
-  (message-context (:pointer om-uint32))
-  (status-string (:pointer gss-buffer-desc)))
-
-(cffi:defcfun ("gss_release_buffer" gss-release-buffer) om-uint32
-  (minor-status (:pointer om-uint32))
-  (buffer (:pointer gss-buffer-desc)))
-
-(cffi:defcfun ("gss_init_sec_context" gss-init-sec-context) om-uint32
-  (minor-status (:pointer om-uint32))
-  (initiator-cred-handle gss-cred-id-t)
-  (context-handle (:pointer gss-ctx-id-t))
-  (target-name gss-name-t)
-  (mech-type gss-oid)
-  (req-flags om-uint32)
-  (time_req om-uint32)
-  (input-chan-bindings gss-channel-bindings-t)
-  (input-token (:pointer gss-buffer-desc))
-  (actual-mech-type (:pointer gss-oid))
-  (output-token (:pointer gss-buffer-desc))
-  (ret-flags (:pointer om-uint32))
-  (time-rec (:pointer om-uint32)))
-
-(cffi:defcvar ("GSS_C_NT_HOSTBASED_SERVICE" *gss-c-nt-hostbased-service* :read-only t) gss-oid)
-(cffi:defcvar ("GCC_C_NO_OID" *gss-c-no-oid* :read-only t) gss-oid)
+(defun error-p (code)
+  (or (calling-error-p code) (routine-error-p code)))
 
 (defmacro gss-call (minor-sym form)
   (check-type minor-sym symbol)
   (let ((status-sym (gensym "STATUS-")))
     `(cffi:with-foreign-objects ((,minor-sym 'om-uint32))
        (let ((,status-sym ,form))
-         (unless (zerop ,status-sym)
+         (when (error-p ,status-sym)
            (error "Call failed: ~s~%~s" ',form (errors-as-string ,status-sym ,minor-sym)))))))
 
 #+nil(defun make-name (name-string)
@@ -120,16 +84,24 @@
       (setf (cffi:mem-ref context 'gss-ctx-id-t) gss-c-no-context)
       (setf (cffi:foreign-slot-value input-token 'gss-buffer-desc 'length) 0)
       (setf (cffi:foreign-slot-value input-token 'gss-buffer-desc 'value) (cffi:null-pointer))
-      (gss-call m (gss-init-sec-context m
-                                        gss-c-no-credential
-                                        context
-                                        (cffi:mem-ref name 'gss-name-t)
-                                        gss-c-no-oid
-                                        0
-                                        0
-                                        gss-c-no-channel-bindings
-                                        input-token
-                                        actual-mech-type
-                                        output-token
-                                        ret-flags
-                                        time-rec)))))
+      (let ((result (gss-call m (gss-init-sec-context m
+                                                      gss-c-no-credential
+                                                      context
+                                                      (cffi:mem-ref name 'gss-name-t)
+                                                      gss-c-no-oid
+                                                      0
+                                                      0
+                                                      gss-c-no-channel-bindings
+                                                      input-token
+                                                      actual-mech-type
+                                                      output-token
+                                                      ret-flags
+                                                      time-rec))))
+        (unwind-protect
+             (values result (cffi:convert-from-foreign (cffi:foreign-slot-value output-token 'gss-buffer-desc 'value)
+                                                       (list :array :unsigned-char (cffi:convert-from-foreign (cffi:foreign-slot-value output-token 'gss-buffer-desc 'length) 'om-uint32))))
+          (cffi:with-foreign-objects ((minor 'om-uint32))
+            (gss-release-buffer minor output-token)))))))
+
+(defun accept-sec ()
+  )

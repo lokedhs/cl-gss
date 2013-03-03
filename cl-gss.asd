@@ -12,9 +12,11 @@
   :author "Elias Martenson <lokedhs@gmail.com>"
   :license "BSD"
   :description "Common Lisp interface to GSSAPI"
-  :depends-on (:cffi)
+  :depends-on (:cffi
+               :trivial-garbage)
   :components ((:module src
                         :serial t
                         :components ((:file "package")
                                      (cffi-grovel:grovel-file "gss-grovel")
+                                     (:file "functions")
                                      (:file "cl-gss")))))
