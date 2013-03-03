@@ -86,7 +86,7 @@
          until (zerop (cffi:mem-ref message-context 'om-uint32))))))
 
 (defun init-sec (target)
-  (let ((name (if (stringp target) (make-name target) (resolve-gss-ptr target))))
+  (let ((name (if (stringp target) (make-name target) target)))
     (cffi:with-foreign-objects ((context 'gss-ctx-id-t)
                                 (input-token 'gss-buffer-desc)
                                 (actual-mech-type 'gss-oid)
@@ -99,7 +99,7 @@
       (let ((result (gss-call m (gss-init-sec-context m
                                                       gss-c-no-credential
                                                       context
-                                                      (cffi:mem-ref name 'gss-name-t)
+                                                      (cffi:mem-ref (resolve-gss-ptr name) 'gss-name-t)
                                                       gss-c-no-oid
                                                       0
                                                       0
