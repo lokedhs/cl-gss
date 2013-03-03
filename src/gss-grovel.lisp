@@ -17,5 +17,7 @@
 (ctype gss-buffer-t "gss_buffer_t")
 
 (ctype gss-name-t "gss_name_t")
-
 (ctype gss-oid "gss_OID")
+(ctype gss-cred-id-t "gss_cred_id_t")
+(ctype gss-ctx-id-t "gss_ctx_id_t")
+(ctype gss-channel-bindings-t "gss_channel_bindings_t")
