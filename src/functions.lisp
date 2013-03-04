@@ -64,7 +64,7 @@
   (acceptor-cred-handle gss-cred-id-t)
   (input-token-buffer (:pointer gss-buffer-desc))
   (input-chan-bindings gss-channel-bindings-t)
-  (src-name gss-name-t)
+  (src-name (:pointer gss-name-t))
   (mech-type (:pointer gss-oid))
   (output-token (:pointer gss-buffer-desc))
   (ret-flags (:pointer om-uint32))

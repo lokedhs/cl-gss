@@ -11,10 +11,8 @@
 
 (defmethod initialize-instance :after ((obj name) &key &allow-other-keys)
   (let ((ptr (gss-memory-mixin-ptr obj)))
-    (let ((out *standard-output*))
-      (trivial-garbage:finalize obj #'(lambda ()
-                                        (format out "releasing ~s~%" ptr)
-                                        (gss-call m (gss-release-name m ptr)))))))
+    (trivial-garbage:finalize obj #'(lambda ()
+                                      (gss-call m (gss-release-name m ptr))))))
 
 (defgeneric release-gss-object (value)
   (:method ((value name))
@@ -101,11 +99,11 @@
       (setf (buffer-desc-length input-token) 0)
       (setf (buffer-desc-value input-token) (cffi:null-pointer))
       (let ((result (gss-call m (gss-init-sec-context m
-                                                      gss-c-no-credential
+                                                      gss-c-no-credential 
                                                       context
                                                       (cffi:mem-ref (resolve-gss-ptr name) 'gss-name-t)
                                                       *gss-c-no-oid*
-                                                      (logior gss-c-mutual-flag
+                                                      (logior ;gss-c-mutual-flag
                                                               gss-c-conf-flag)
                                                       0
                                                       gss-c-no-channel-bindings
@@ -120,5 +118,33 @@
           (cffi:with-foreign-objects ((minor 'om-uint32))
             (gss-release-buffer minor output-token)))))))
 
-(defun accept-sec ()
-  )
+(defun array-to-foreign-char-array (array)
+  (let ((result (make-array (length array) :element-type '(unsigned-byte 8))))
+    (map-into result #'identity array)
+    (cffi:convert-to-foreign result (list :array :unsigned-char (length array)))))
+
+(defun accept-sec (buffer)
+  (cffi:with-foreign-objects ((context 'gss-ctx-id-t)
+                              (input-token-buffer 'gss-buffer-desc)
+                              (output-token 'gss-buffer-desc)
+                              (ret-flags 'om-uint32)
+                              (time-rec 'om-uint32))
+    (setf (cffi:mem-ref context 'gss-ctx-id-t) gss-c-no-context)
+    (let ((foreign-buffer (array-to-foreign-char-array buffer)))
+      (unwind-protect
+           (progn
+             (setf (buffer-desc-length input-token-buffer) (length buffer))
+             (setf (buffer-desc-value input-token-buffer) foreign-buffer)
+             (gss-call m (gss-accept-sec-context m ;minor
+                                                 context ;context-handle
+                                                 gss-c-no-credential ;acceptor-cred-handle
+                                                 input-token-buffer ;input buffer
+                                                 gss-c-no-channel-bindings ;chan bindings
+                                                 (cffi:null-pointer) ;src name
+                                                 (cffi:null-pointer) ;mech type
+                                                 output-token ;output token
+                                                 ret-flags ;ret flags
+                                                 time-rec ;time rec
+                                                 (cffi-sys:null-pointer) ;delegated cred handle
+                                                 )))
+        (cffi:foreign-free foreign-buffer)))))
