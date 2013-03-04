@@ -66,3 +66,9 @@
 
 (cffi:defcvar ("GSS_C_NT_HOSTBASED_SERVICE" *gss-c-nt-hostbased-service* :read-only t) gss-oid)
 (cffi:defcvar ("GCC_C_NO_OID" *gss-c-no-oid* :read-only t) gss-oid)
+
+(defmacro buffer-desc-length (buf)
+  `(cffi:foreign-slot-value ,buf 'gss-buffer-desc 'length))
+
+(defmacro buffer-desc-value (buf)
+  `(cffi:foreign-slot-value ,buf 'gss-buffer-desc 'value))

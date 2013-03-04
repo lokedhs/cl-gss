@@ -51,8 +51,8 @@
   (let ((output-name (cffi:foreign-alloc 'gss-name-t)))
     (cffi:with-foreign-string (foreign-name-string name-string)
       (cffi:with-foreign-objects ((buf 'gss-buffer-desc))
-        (setf (cffi:foreign-slot-value buf 'gss-buffer-desc 'length) (1+ (length name-string)))
-        (setf (cffi:foreign-slot-value buf 'gss-buffer-desc 'value) foreign-name-string)
+        (setf (buffer-desc-length buf) (1+ (length name-string)))
+        (setf (buffer-desc-value buf) foreign-name-string)
         (gss-call minor (gss-import-name minor buf *gss-c-nt-hostbased-service* output-name))
         (make-instance 'name :ptr output-name)))))
 
@@ -63,7 +63,7 @@
     (let ((status (gss-display-name minor (cffi:mem-ref (resolve-gss-ptr name) 'gss-name-t) output-name output-type)))
       (unless (zerop status)
         (error "Error when calling gss-display-name: ~s" (errors-as-string status minor)))
-      (cffi:convert-from-foreign (cffi:foreign-slot-value output-name 'gss-buffer-desc 'value) :string))))
+      (cffi:convert-from-foreign (buffer-desc-value output-name) :string))))
 
 (defun errors-as-string (major-status minor-status)
   (declare (ignore minor-status))
@@ -79,10 +79,9 @@
                           (progn
                             (when (error-p status)
                               (error "call to gss-display-status failed with status=~s" status))
-                            (cffi:convert-from-foreign (cffi:foreign-slot-value status-output
-                                                                                'gss-buffer-desc
-                                                                                'value) :string))
-                       (gss-release-buffer minor status-output))))
+                            (cffi:convert-from-foreign (buffer-desc-value status-output) :string))
+                       (when (error-p (gss-release-buffer minor status-output))
+                         (error "failed to release memory from gss-display-status")))))
          until (zerop (cffi:mem-ref message-context 'om-uint32))))))
 
 (defun init-sec (target)
@@ -94,8 +93,8 @@
                                 (ret-flags 'om-uint32)
                                 (time-rec 'om-uint32))
       (setf (cffi:mem-ref context 'gss-ctx-id-t) gss-c-no-context)
-      (setf (cffi:foreign-slot-value input-token 'gss-buffer-desc 'length) 0)
-      (setf (cffi:foreign-slot-value input-token 'gss-buffer-desc 'value) (cffi:null-pointer))
+      (setf (buffer-desc-length input-token) 0)
+      (setf (buffer-desc-value input-token) (cffi:null-pointer))
       (let ((result (gss-call m (gss-init-sec-context m
                                                       gss-c-no-credential
                                                       context
@@ -110,8 +109,8 @@
                                                       ret-flags
                                                       time-rec))))
         (unwind-protect
-             (values result (cffi:convert-from-foreign (cffi:foreign-slot-value output-token 'gss-buffer-desc 'value)
-                                                       (list :array :unsigned-char (cffi:convert-from-foreign (cffi:foreign-slot-value output-token 'gss-buffer-desc 'length) 'om-uint32))))
+             (values result (cffi:convert-from-foreign (buffer-desc-value output-token)
+                                                       (list :array :unsigned-char (cffi:convert-from-foreign (buffer-desc-length output-token) 'om-uint32))))
           (cffi:with-foreign-objects ((minor 'om-uint32))
             (gss-release-buffer minor output-token)))))))
 
