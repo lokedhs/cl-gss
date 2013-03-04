@@ -8,6 +8,13 @@
 
 (cffi:use-foreign-library libgssapi)
 
+(cffi:defctype gss-oid :pointer)
+(cffi:defctype gss-buffer-t :pointer)
+
+(cffi:defcvar ("GSS_C_NT_HOSTBASED_SERVICE" *gss-c-nt-hostbased-service* :read-only t) gss-oid)
+
+(defparameter *gss-c-no-oid* (cffi:null-pointer))
+
 (cffi:defcfun ("gss_import_name" gss-import-name) om-uint32
   (minor-status (:pointer om-uint32))
   (input-name-buffer (:pointer gss-buffer-desc))
@@ -63,9 +70,6 @@
   (ret-flags (:pointer om-uint32))
   (time-rec (:pointer om-uint32))
   (delegated-cred-handle (:pointer gss-cred-id-t)))
-
-(cffi:defcvar ("GSS_C_NT_HOSTBASED_SERVICE" *gss-c-nt-hostbased-service* :read-only t) gss-oid)
-(cffi:defcvar ("GCC_C_NO_OID" *gss-c-no-oid* :read-only t) gss-oid)
 
 (defmacro buffer-desc-length (buf)
   `(cffi:foreign-slot-value ,buf 'gss-buffer-desc 'length))

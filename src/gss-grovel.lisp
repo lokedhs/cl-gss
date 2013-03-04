@@ -2,10 +2,27 @@
 
 (include "gssapi/gssapi.h")
 
+(constant (gss-c-deleg-flag "GSS_C_DELEG_FLAG"))
+(constant (gss-c-mutual-flag "GSS_C_MUTUAL_FLAG"))
+(constant (gss-c-replay-flag "GSS_C_REPLAY_FLAG"))
+(constant (gss-c-sequence-flag "GSS_C_SEQUENCE_FLAG"))
+(constant (gss-c-conf-flag "GSS_C_CONF_FLAG"))
+(constant (gss-c-integ-flag "GSS_C_INTEG_FLAG"))
+(constant (gss-c-anon-flag "GSS_C_ANON_FLAG"))
+(constant (gss-c-prot-ready-flag "GSS_C_PROT_READY_FLAG"))
+(constant (gss-c-trans-flag "GSS_C_TRANS_FLAG"))
+(constant (gss-c-deleg-policy-flag "GSS_C_DELEG_POLICY_FLAG"))
+
+(constant (gss-c-both "GSS_C_BOTH"))
+(constant (gss-c-initiate "GSS_C_INITIATE"))
+(constant (gss-c-accept "GSS_C_ACCEPT"))
+
 (constant (gss-c-gss-code "GSS_C_GSS_CODE"))
+(constant (gss-c-mech-code "GSS_C_MECH_CODE"))
+
 (constant (gss-c-no-name "GSS_C_NO_NAME"))
 (constant (gss-c-no-buffer "GSS_C_NO_BUFFER"))
-(constant (gss-c-no-oid "GSS_C_NO_OID"))
+;(constant (gss-c-no-oid "GSS_C_NO_OID"))
 (constant (gss-c-no-oid-set "GSS_C_NO_OID_SET"))
 (constant (gss-c-no-context "GSS_C_NO_CONTEXT"))
 (constant (gss-c-no-credential "GSS_C_NO_CREDENTIAL"))
@@ -21,6 +38,7 @@
 (constant (gss-s-call-inaccessible-read "GSS_S_CALL_INACCESSIBLE_READ"))
 (constant (gss-s-call-inaccessible-write "GSS_S_CALL_INACCESSIBLE_WRITE"))
 (constant (gss-s-call-bad-structure "GSS_S_CALL_BAD_STRUCTURE"))
+
 
 (constant (gss-s-bad-mech "GSS_S_BAD_MECH"))
 (constant (gss-s-bad-name "GSS_S_BAD_NAME"))
@@ -40,6 +58,7 @@
 (constant (gss-s-unavailable "GSS_S_UNAVAILABLE"))
 (constant (gss-s-duplicate-element "GSS_S_DUPLICATE_ELEMENT"))
 (constant (gss-s-name-not-mn "GSS_S_NAME_NOT_MN"))
+(constant (gss-s-bad-mech-attr "GSS_S_BAD_MECH_ATTR"))
 
 (constant (gss-s-continue-needed "GSS_S_CONTINUE_NEEDED"))
 (constant (gss-s-duplicate-token "GSS_S_DUPLICATE_TOKEN"))
@@ -49,11 +68,17 @@
 
 (ctype om-uint32 "OM_uint32")
 
-(cstruct gss-buffer-desc "gss_buffer_desc" (length "length" :type om-uint32) (value "value" :type :pointer))
-(ctype gss-buffer-t "gss_buffer_t")
+(cstruct gss-buffer-desc "gss_buffer_desc"
+         (length "length" :type om-uint32)
+         (value "value" :type :pointer))
+;(ctype gss-buffer-t (:pointer gss-buffer-desc))
+
+(cstruct gss-oid-desc "gss_OID_desc"
+         (length "length" :type om-uint32)
+         (elements "elements" :type :pointer))
+;(ctype gss-oid (:pointer gss-oid-desc))
 
 (ctype gss-name-t "gss_name_t")
-(ctype gss-oid "gss_OID")
 (ctype gss-cred-id-t "gss_cred_id_t")
 (ctype gss-ctx-id-t "gss_ctx_id_t")
 (ctype gss-channel-bindings-t "gss_channel_bindings_t")

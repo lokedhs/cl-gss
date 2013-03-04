@@ -18,5 +18,7 @@
                         :serial t
                         :components ((:file "package")
                                      (cffi-grovel:grovel-file "gss-grovel")
+                                     (cffi-grovel:grovel-file "gss-mech-krb5-grovel")
                                      (:file "functions")
+                                     (:file "functions-mech-krb5")
                                      (:file "cl-gss")))))

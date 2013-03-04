@@ -43,7 +43,8 @@
        (let ((,status-sym ,form))
          (when (error-p ,status-sym)
            (error "Call failed: ~s~%~s" ',form (errors-as-string ,status-sym
-                                                                 (cffi:mem-ref ,minor-sym 'om-uint32))))
+                                                                 (cffi:mem-ref ,minor-sym 'om-uint32)
+                                                                 gss-mech-krb5)))
          ,status-sym))))
 
 (defun make-name (name-string)
@@ -65,24 +66,28 @@
         (error "Error when calling gss-display-name: ~s" (errors-as-string status minor)))
       (cffi:convert-from-foreign (buffer-desc-value output-name) :string))))
 
-(defun errors-as-string (major-status minor-status)
-  (declare (ignore minor-status))
-  (unless (zerop major-status)
-    (cffi:with-foreign-objects ((message-context 'om-uint32))
-      (loop
-         repeat 8 ; Prevent heap overflow if the loop never exits
-         collect (cffi:with-foreign-objects ((minor 'om-uint32)
-                                             (status-output 'gss-buffer-desc))
-                   (let ((status (gss-display-status minor major-status gss-c-gss-code gss-c-no-oid
-                                                     message-context status-output)))
-                     (unwind-protect
-                          (progn
-                            (when (error-p status)
-                              (error "call to gss-display-status failed with status=~s" status))
-                            (cffi:convert-from-foreign (buffer-desc-value status-output) :string))
-                       (when (error-p (gss-release-buffer minor status-output))
-                         (error "failed to release memory from gss-display-status")))))
-         until (zerop (cffi:mem-ref message-context 'om-uint32))))))
+(defun errors-as-string (major-status &optional minor-status minor-mech-oid)
+  (labels ((extract-error (status status-code-type mech)
+             (cffi:with-foreign-objects ((message-context 'om-uint32))
+               (loop
+                  repeat 8 ; Prevent heap overflow if the loop never exits
+                  collect (cffi:with-foreign-objects ((minor 'om-uint32)
+                                                      (status-output 'gss-buffer-desc))
+                            (let ((status (gss-display-status minor status status-code-type mech
+                                                              message-context status-output)))
+                              (unwind-protect
+                                   (progn
+                                     (when (error-p status)
+                                       (error "call to gss-display-status failed with status=~s" status))
+                                     (cffi:convert-from-foreign (buffer-desc-value status-output) :string))
+                                (when (error-p (gss-release-buffer minor status-output))
+                                  (error "failed to release memory from gss-display-status")))))
+                  until (zerop (cffi:mem-ref message-context 'om-uint32))))))
+    (when (error-p major-status)
+      (list (extract-error major-status gss-c-gss-code *gss-c-no-oid*)
+            (if (and minor-status minor-mech-oid (not (zerop minor-status)))
+                (extract-error minor-status gss-c-mech-code minor-mech-oid)
+                nil)))))
 
 (defun init-sec (target)
   (let ((name (if (stringp target) (make-name target) target)))
@@ -99,8 +104,9 @@
                                                       gss-c-no-credential
                                                       context
                                                       (cffi:mem-ref (resolve-gss-ptr name) 'gss-name-t)
-                                                      gss-c-no-oid
-                                                      0
+                                                      *gss-c-no-oid*
+                                                      (logior gss-c-mutual-flag
+                                                              gss-c-conf-flag)
                                                       0
                                                       gss-c-no-channel-bindings
                                                       input-token
