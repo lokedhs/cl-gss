@@ -43,6 +43,11 @@
   (minor-status (:pointer om-uint32))
   (name (:pointer gss-name-t)))
 
+(cffi:defcfun ("gss_delete_sec_context" gss-delete-sec-context) om-uint32
+  (minor-status (:pointer om-uint32))
+  (context-handle (:pointer gss-ctx-id-t))
+  (output-token (:pointer gss-buffer-desc)))
+
 (cffi:defcfun ("gss_init_sec_context" gss-init-sec-context) om-uint32
   (minor-status (:pointer om-uint32))
   (initiator-cred-handle gss-cred-id-t)
