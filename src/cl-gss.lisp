@@ -11,6 +11,26 @@
            (raise-error ,status-sym (cffi:mem-ref ,minor-sym 'om-uint32) gss-mech-krb5))
          ,status-sym))))
 
+(defmacro with-foreign-buffer-from-byte-array ((sym buffer) &body body)
+  (let ((s (gensym "FOREIGN-BUFFER-")))
+    `(let ((,s (array-to-foreign-char-array ,buffer)))
+       (unwind-protect
+            (let ((,sym ,s))
+              (progn ,@body))
+         (cffi:foreign-free ,s)))))
+
+(defmacro with-buffer-desc ((sym buffer) &body body)
+  (let ((array-copy (gensym "ARRAY-"))
+        (mem-sym (gensym "MEM-"))
+        (buffer-sym (gensym "EXTERNAL-BUFFER-")))
+    `(let ((,array-copy ,buffer))
+       (with-foreign-buffer-from-byte-array (,mem-sym buffer)
+         (cffi:with-foreign-objects ((,buffer-sym 'gss-buffer-desc))
+           (setf (buffer-desc-length ,buffer-sym) (length ,array-copy))
+           (setf (buffer-desc-value ,buffer-sym) ,mem-sym)
+           (let ((,sym ,buffer-sym))
+             ,@body))))))
+
 (defclass gss-memory-mixin ()
   ((ptr :reader gss-memory-mixin-ptr
         :initarg :ptr)))
@@ -22,8 +42,9 @@
 (defmethod initialize-instance :after ((obj name) &key &allow-other-keys)
   (let ((ptr (gss-memory-mixin-ptr obj)))
     (trivial-garbage:finalize obj #'(lambda ()
-                                      (gss-call m (gss-release-name m ptr))
-                                      (cffi:foreign-free ptr)))))
+                                      (cffi:with-foreign-objects ((n 'gss-name-t))
+                                        (setf (cffi:mem-ref n 'gss-name-t) ptr)
+                                        (gss-call m (gss-release-name m n)))))))
 
 (defclass context (gss-memory-mixin)
   ()
@@ -39,10 +60,6 @@
 (defgeneric release-gss-object (value)
   (:method ((value name))
     (format *error-output* "explicit release is not currently supported~%")))
-
-(defgeneric resolve-gss-ptr (value)
-  (:method ((value gss-memory-mixin)) (gss-memory-mixin-ptr value))
-  (:method ((value t)) value))
 
 (define-condition gss-error (error)
   ((major-errors :type list
@@ -81,22 +98,19 @@
 
 (defun make-name (name-string)
   (check-type name-string string)
-  (let ((output-name (cffi:foreign-alloc 'gss-name-t)))
-    (cffi:with-foreign-string (foreign-name-string name-string)
-      (cffi:with-foreign-objects ((buf 'gss-buffer-desc))
-        (setf (buffer-desc-length buf) (1+ (length name-string)))
-        (setf (buffer-desc-value buf) foreign-name-string)
-        (gss-call minor (gss-import-name minor buf *gss-c-nt-hostbased-service* output-name))
-        (make-instance 'name :ptr output-name)))))
+  (cffi:with-foreign-string (foreign-name-string name-string)
+    (cffi:with-foreign-objects ((buf 'gss-buffer-desc)
+                                (output-name 'gss-name-t))
+      (setf (buffer-desc-length buf) (1+ (length name-string)))
+      (setf (buffer-desc-value buf) foreign-name-string)
+      (gss-call minor (gss-import-name minor buf *gss-c-nt-hostbased-service* output-name))
+      (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t)))))
 
 (defun name-to-string (name)
-  (cffi:with-foreign-objects ((minor 'om-uint32)
-                              (output-name 'gss-buffer-desc)
+  (cffi:with-foreign-objects ((output-name 'gss-buffer-desc)
                               (output-type 'gss-oid))
-    (let ((status (gss-display-name minor (cffi:mem-ref (resolve-gss-ptr name) 'gss-name-t) output-name output-type)))
-      (unless (zerop status)
-        (error "Error when calling gss-display-name: ~s" (errors-as-string status minor)))
-      (cffi:convert-from-foreign (buffer-desc-value output-name) :string))))
+    (gss-call m (gss-display-name m (gss-memory-mixin-ptr name) output-name output-type))
+    (cffi:convert-from-foreign (buffer-desc-value output-name) :string)))
 
 (defun errors-as-string (major-status &optional minor-status minor-mech-oid)
   (labels ((extract-error (status status-code-type mech)
@@ -200,7 +214,7 @@ the GSSAPI function `gss_init_sec_context'."
            (let ((result (gss-call m (gss-init-sec-context m
                                                            gss-c-no-credential 
                                                            context-handle
-                                                           (cffi:mem-ref (resolve-gss-ptr name) 'gss-name-t)
+                                                           (gss-memory-mixin-ptr name)
                                                            *gss-c-no-oid*
                                                            (make-flags flags)
                                                            time-req
@@ -250,32 +264,12 @@ the GSSAPI function `gss_init_sec_context'."
                (unwind-protect
                     (values (continue-needed-p result)
                             (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
-                            (make-instance 'name :ptr src-name)
+                            (make-instance 'name :ptr (cffi:mem-ref src-name 'gss-name-t))
                             (token->array output-token)
                             (make-flags-list (cffi:mem-ref time-rec 'om-uint32)))
                  (cffi:with-foreign-objects ((minor 'om-uint32))
                    (gss-release-buffer minor output-token)))))
         (cffi:foreign-free foreign-buffer)))))
-
-(defmacro with-foreign-buffer-from-byte-array ((sym buffer) &body body)
-  (let ((s (gensym "FOREIGN-BUFFER-")))
-    `(let ((,s (array-to-foreign-char-array ,buffer)))
-       (unwind-protect
-            (let ((,sym ,s))
-              (progn ,@body))
-         (cffi:foreign-free ,s)))))
-
-(defmacro with-buffer-desc (sym buffer &body body)
-  (let ((array-copy (gensym "ARRAY-"))
-        (mem-sym (gensym "MEM-"))
-        (bufer-sym (gensym "EXTERNAL-BUFFER-"))))
-  `(let ((,array-copy ,buffer))
-     (with-foreign-buffer-from-byte-array (,mem-sym buffer)
-       (cffi:with-foreign-objects ((,buffer-sym 'gss-buffer-desc))
-         (setf (buffer-desc-length ,buffer-sym) (length ,array-copy))
-         (setf (buffer-desc-value ,buffer-sym) foreign-buffer)
-         (let ((,sym ,buffer-sym))
-           ,@body)))))
 
 ;;
 ;;  Implements gss_wrap
@@ -305,5 +299,15 @@ the GSSAPI function `gss_init_sec_context'."
 ;;  Implements gss_unwrap
 ;;
 (defun unwrap (context buffer)
-  (with-foreign-buffer-from-byte-array (foreign-buffer buffer)
-    ))
+  (with-buffer-desc (input-message-buffer buffer)
+    (cffi:with-foreign-objects ((output-message-buffer 'gss-buffer-desc)
+                                (conf-state :int)
+                                (qop-state 'gss-qop-t))
+      (gss-call m (gss-unwrap m
+                              (gss-memory-mixin-ptr context)
+                              input-message-buffer
+                              output-message-buffer
+                              conf-state
+                              qop-state))
+      (values (token->array output-message-buffer)
+              (not (zerop (cffi:mem-ref conf-state :int)))))))
