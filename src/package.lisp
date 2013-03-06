@@ -1,6 +1,15 @@
 (defpackage :cl-gss
   (:use :cl)
-  (:documentation "Common Lisp interface to GSSAPI."))
+  (:documentation "Common Lisp interface to GSSAPI.")
+  (:export #:gss-error
+           #:gss-error-minor-messages
+           #:gss-error-major-messages
+           #:make-name
+           #:name-to-string
+           #:init-sec
+           #:accept-sec
+           #:wrap
+           #:unwrap))
 
 (in-package :cl-gss)
 

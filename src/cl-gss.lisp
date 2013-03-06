@@ -164,9 +164,11 @@
      collect flag))
 
 (defun token->array (token)
-  (cffi:convert-from-foreign (buffer-desc-value token)
-                             (list :array :unsigned-char
-                                   (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32))))
+  (if (cffi:null-pointer-p token)
+      nil
+      (cffi:convert-from-foreign (buffer-desc-value token)
+                                 (list :array :unsigned-char
+                                       (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32)))))
 
 (defun array-to-foreign-char-array (array)
   (let ((result (make-array (length array) :element-type '(unsigned-byte 8))))
@@ -183,7 +185,15 @@
 ;;;
 (defun init-sec (target &key flags (time-req 0) context input-token)
   "Initialise a GSS security context. This function implements the functionality of
-the GSSAPI function `gss_init_sec_context'."
+the GSSAPI function `gss_init_sec_context'.
+
+This function returns the following values:
+  CONTINUE-NEEDED - non-NIL if the context needs a reply form the remote
+                    service before it can be used
+  CONTEXT - the context that is used to refer to this specific session
+  BUFFER - the buffer that should be sent to the remote service
+  FLAGS - a list of flags that describe various properties of the session.
+          possible flags: :DELEG, :MUTUAL, :REPLAY, :SEQUENCE, :CONF, :INTEG, :ANON"
 
   (check-type target (or string name))
   (check-type flags list)
@@ -237,6 +247,19 @@ the GSSAPI function `gss_init_sec_context'."
 ;;;  Implements the functionality of gss_accept_sec_context
 ;;;
 (defun accept-sec (buffer &key context)
+  "Accept a security context from a remote client. This function implements the
+functionality of the GSSAPI function `gss_accept_sec_context'.
+
+Return values are:
+  CONTINUE-NEEDED - if non-NIL, this value indicates that another message is expected
+                    before the context is ready
+  CONTEXT - the context that is used to refer to this specific session
+  NAME - the name of the remote principal
+  BUFFER - the buffer that should be sent to the remote service, or NIL if there is
+           no need to send more messages
+  FLAGS - a list of flags that describe various properties of the session.
+          possible flags: :DELEG, :MUTUAL, :REPLAY, :SEQUENCE, :CONF, :INTEG, :ANON"
+
   (cffi:with-foreign-objects ((context-handle 'gss-ctx-id-t)
                               (input-token-buffer 'gss-buffer-desc)
                               (src-name 'gss-name-t)
@@ -275,6 +298,10 @@ the GSSAPI function `gss_init_sec_context'."
 ;;  Implements gss_wrap
 ;;
 (defun wrap (context buffer &key conf)
+  "Wrap a the byte array in BUFFER in an cryptographic wrapper, using the specified CONTEXT.
+The buffer will be encrypted if CONF is non-NIL. This function returns the encrypted
+data as a byte array, and a second boolean return value that incidates whether the
+message was encrypted or not."
   (let ((foreign-buffer (array-to-foreign-char-array buffer)))
     (unwind-protect
          (cffi:with-foreign-objects ((input-foreign-desc 'gss-buffer-desc)
@@ -299,6 +326,9 @@ the GSSAPI function `gss_init_sec_context'."
 ;;  Implements gss_unwrap
 ;;
 (defun unwrap (context buffer)
+  "Convert an wrapped buffer into usable form. CONTEXT is the security context to use,
+BUFFER is the protected byte array. This function returns the unwrapped buffer, as well
+as a boolean indicating whether the original message was encrypted."
   (with-buffer-desc (input-message-buffer buffer)
     (cffi:with-foreign-objects ((output-message-buffer 'gss-buffer-desc)
                                 (conf-state :int)
