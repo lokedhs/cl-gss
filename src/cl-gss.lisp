@@ -32,8 +32,7 @@
 (defmethod initialize-instance :after ((obj context) &key &allow-other-keys)
   (let ((ptr (gss-memory-mixin-ptr obj)))
     (trivial-garbage:finalize obj #'(lambda ()
-                                      (gss-call m (gss-delete-sec-context m ptr gss-c-no-buffer))
-                                      (cffi:foreign-free ptr)))))
+                                      (gss-call m (gss-delete-sec-context m ptr gss-c-no-buffer))))))
 
 (defgeneric release-gss-object (value)
   (:method ((value name))
@@ -161,9 +160,7 @@
 (defun get-or-allocate-context (context)
   (if context
       (gss-memory-mixin-ptr context)
-      (let ((p (cffi:foreign-alloc 'gss-ctx-id-t)))
-        (setf (cffi:mem-ref p 'gss-ctx-id-t) gss-c-no-context)
-        p)))
+      gss-c-no-context))
 
 ;;;
 ;;;  Implementation of gss_init_sec_context
@@ -179,13 +176,14 @@ the GSSAPI function `gss_init_sec_context'."
   (check-type input-token (or null simple-vector))
 
   (let ((name (if (stringp target) (make-name target) target))
-        (context-handle (get-or-allocate-context context))
         input-token-buffer)
     (cffi:with-foreign-objects ((input-token-content 'gss-buffer-desc)
+                                (context-handle 'gss-ctx-id-t)
                                 (actual-mech-type 'gss-oid)
                                 (output-token 'gss-buffer-desc)
                                 (ret-flags 'om-uint32)
                                 (time-rec 'om-uint32))
+      (setf (cffi:mem-ref context-handle 'gss-ctx-id-t) (get-or-allocate-context context))
       (if input-token
           ;; We have an input token, fill it in
           (progn
@@ -212,7 +210,7 @@ the GSSAPI function `gss_init_sec_context'."
                                                            time-rec))))
              (unwind-protect
                   (values (continue-needed-p result)
-                          (or context (make-instance 'context :ptr context-handle))
+                          (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
                           (token->array output-token)
                           (make-flags-list (cffi:mem-ref ret-flags 'om-uint32)))
                (cffi:with-foreign-objects ((minor 'om-uint32))
@@ -223,13 +221,14 @@ the GSSAPI function `gss_init_sec_context'."
 ;;;  Implements the functionality of gss_accept_sec_context
 ;;;
 (defun accept-sec (buffer &key context)
-  (cffi:with-foreign-objects ((input-token-buffer 'gss-buffer-desc)
+  (cffi:with-foreign-objects ((context-handle 'gss-ctx-id-t)
+                              (input-token-buffer 'gss-buffer-desc)
                               (src-name 'gss-name-t)
                               (output-token 'gss-buffer-desc)
                               (ret-flags 'om-uint32)
                               (time-rec 'om-uint32))
-    (let ((foreign-buffer (array-to-foreign-char-array buffer))
-          (context-handle (get-or-allocate-context context)))
+    (setf (cffi:mem-ref context-handle 'gss-ctx-id-t) (get-or-allocate-context context))
+    (let ((foreign-buffer (array-to-foreign-char-array buffer)))
       (unwind-protect
            (progn
              (setf (buffer-desc-length input-token-buffer) (length buffer))
@@ -248,10 +247,18 @@ the GSSAPI function `gss_init_sec_context'."
                                                                ))))
                (unwind-protect
                     (values (continue-needed-p result)
-                            (or context (make-instance 'context :ptr context-handle))
+                            (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
                             (make-instance 'name :ptr src-name)
                             (token->array output-token)
                             (make-flags-list (cffi:mem-ref time-rec 'om-uint32)))
                  (cffi:with-foreign-objects ((minor 'om-uint32))
                    (gss-release-buffer minor output-token)))))
         (cffi:foreign-free foreign-buffer)))))
+
+;;
+;;  Implements gss_wrap
+;;
+#+nil(defun wrap (context buffer)
+  (gss-call m (gss-wrap m
+                        (gss-memory-mixin-ptr context)
+                        )))
