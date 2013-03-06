@@ -66,6 +66,9 @@
 (constant (gss-s-unseq-token "GSS_S_UNSEQ_TOKEN"))
 (constant (gss-s-gap-token "GSS_S_GAP_TOKEN"))
 
+(constant (gss-c-qop-default "GSS_C_QOP_DEFAULT"))
+(constant (gss-c-indefinite "GSS_C_INDEFINITE"))
+
 (ctype om-uint32 "OM_uint32")
 
 (cstruct gss-buffer-desc "gss_buffer_desc"
@@ -82,3 +85,4 @@
 (ctype gss-cred-id-t "gss_cred_id_t")
 (ctype gss-ctx-id-t "gss_ctx_id_t")
 (ctype gss-channel-bindings-t "gss_channel_bindings_t")
+(ctype gss-qop-t "gss_qop_t")

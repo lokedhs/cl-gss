@@ -76,6 +76,23 @@
   (time-rec (:pointer om-uint32))
   (delegated-cred-handle (:pointer gss-cred-id-t)))
 
+(cffi:defcfun ("gss_wrap" gss-wrap) om-uint32
+  (minor-status (:pointer om-uint32))
+  (context-handle gss-ctx-id-t)
+  (conf-req-flag :int)
+  (qop-req gss-qop-t)
+  (input-message-buffer (:pointer gss-buffer-desc))
+  (conf-state (:pointer :int))
+  (output-message-buffer (:pointer gss-buffer-desc)))
+
+(cffi:defcfun ("gss_unwrap" gss-unwrap) om-uint32
+  (minor-status (:pointer om-uint32))
+  (context-handle gss-ctx-id-t)
+  (input-message-buffer (:pointer gss-buffer-desc))
+  (output-message-buffer (:pointer gss-buffer-desc))
+  (conf-state (:pointer :int))
+  (qop-state (:pointer gss-qop-t)))
+
 (defmacro buffer-desc-length (buf)
   `(cffi:foreign-slot-value ,buf 'gss-buffer-desc 'length))
 

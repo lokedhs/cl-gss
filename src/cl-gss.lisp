@@ -32,7 +32,9 @@
 (defmethod initialize-instance :after ((obj context) &key &allow-other-keys)
   (let ((ptr (gss-memory-mixin-ptr obj)))
     (trivial-garbage:finalize obj #'(lambda ()
-                                      (gss-call m (gss-delete-sec-context m ptr gss-c-no-buffer))))))
+                                      (cffi:with-foreign-objects ((h 'gss-ctx-id-t))
+                                        (setf (cffi:mem-ref h 'gss-ctx-id-t) ptr)
+                                        (gss-call m (gss-delete-sec-context m h gss-c-no-buffer)))))))
 
 (defgeneric release-gss-object (value)
   (:method ((value name))
@@ -255,10 +257,53 @@ the GSSAPI function `gss_init_sec_context'."
                    (gss-release-buffer minor output-token)))))
         (cffi:foreign-free foreign-buffer)))))
 
+(defmacro with-foreign-buffer-from-byte-array ((sym buffer) &body body)
+  (let ((s (gensym "FOREIGN-BUFFER-")))
+    `(let ((,s (array-to-foreign-char-array ,buffer)))
+       (unwind-protect
+            (let ((,sym ,s))
+              (progn ,@body))
+         (cffi:foreign-free ,s)))))
+
+(defmacro with-buffer-desc (sym buffer &body body)
+  (let ((array-copy (gensym "ARRAY-"))
+        (mem-sym (gensym "MEM-"))
+        (bufer-sym (gensym "EXTERNAL-BUFFER-"))))
+  `(let ((,array-copy ,buffer))
+     (with-foreign-buffer-from-byte-array (,mem-sym buffer)
+       (cffi:with-foreign-objects ((,buffer-sym 'gss-buffer-desc))
+         (setf (buffer-desc-length ,buffer-sym) (length ,array-copy))
+         (setf (buffer-desc-value ,buffer-sym) foreign-buffer)
+         (let ((,sym ,buffer-sym))
+           ,@body)))))
+
 ;;
 ;;  Implements gss_wrap
 ;;
-#+nil(defun wrap (context buffer)
-  (gss-call m (gss-wrap m
-                        (gss-memory-mixin-ptr context)
-                        )))
+(defun wrap (context buffer &key conf)
+  (let ((foreign-buffer (array-to-foreign-char-array buffer)))
+    (unwind-protect
+         (cffi:with-foreign-objects ((input-foreign-desc 'gss-buffer-desc)
+                                     (output-foreign-desc 'gss-buffer-desc)
+                                     (conf-state :int))
+           (setf (buffer-desc-length input-foreign-desc) (length buffer))
+           (setf (buffer-desc-value input-foreign-desc) foreign-buffer)
+           (gss-call m (gss-wrap m
+                                 (gss-memory-mixin-ptr context)
+                                 (if conf 1 0)
+                                 gss-c-qop-default
+                                 input-foreign-desc
+                                 conf-state
+                                 output-foreign-desc))
+           (unwind-protect
+                (values (token->array output-foreign-desc)
+                        (not (zerop (cffi:mem-ref conf-state :int))))
+             (gss-call m (gss-release-buffer m output-foreign-desc))))
+      (cffi:foreign-free foreign-buffer))))
+
+;;
+;;  Implements gss_unwrap
+;;
+(defun unwrap (context buffer)
+  (with-foreign-buffer-from-byte-array (foreign-buffer buffer)
+    ))
