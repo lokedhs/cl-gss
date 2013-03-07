@@ -119,12 +119,13 @@
                   repeat 8 ; Prevent heap overflow if the loop never exits
                   collect (cffi:with-foreign-objects ((minor 'om-uint32)
                                                       (status-output 'gss-buffer-desc))
-                            (let ((status (gss-display-status minor status status-code-type mech
-                                                              message-context status-output)))
+                            (let ((display-result (gss-display-status minor status status-code-type mech
+                                                                      message-context status-output)))
                               (unwind-protect
                                    (progn
-                                     (when (error-p status)
-                                       (error "call to gss-display-status failed with status=~s" status))
+                                     (when (error-p display-result)
+                                       (error "call to gss-display-status failed with status=~s"
+                                              display-result))
                                      (cffi:convert-from-foreign (buffer-desc-value status-output) :string))
                                 (when (error-p (gss-release-buffer minor status-output))
                                   (error "failed to release memory from gss-display-status")))))
@@ -339,5 +340,7 @@ as a boolean indicating whether the original message was encrypted."
                               output-message-buffer
                               conf-state
                               qop-state))
-      (values (token->array output-message-buffer)
-              (not (zerop (cffi:mem-ref conf-state :int)))))))
+      (unwind-protect
+           (values (token->array output-message-buffer)
+                   (not (zerop (cffi:mem-ref conf-state :int))))
+        (gss-call m (gss-release-buffer m output-message-buffer))))))
