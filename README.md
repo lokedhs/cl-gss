@@ -1,13 +1,14 @@
-cl-gss - Implementation of GSS-API bindings for Common Lisp
+cl-gss -- Common Lisp bindings for GSS-API
+==========================================
 
 Author contact information
-==========================
+--------------------------
 
 Elias Martenson
 Email: lokedhs@gmail.com
 
 Examples
-========
+--------
 
 On the initiating side, the function INIT-SEC must be called to
 initialise the handshake. This function takes a single required
@@ -21,4 +22,43 @@ In this case, we're only passing a single flag, :MUTUAL. This flag
 indicates that not only do I want to verify my identify with the
 remote service. It should identify itself with me.
 
-The function returns several values:
+This call returns several values:
+
+  - A boolean value indicating whether `INIT-SEC` expects a reply from
+    the peer before the context is ready
+  - The context that may or may not be ready for use (as indicated by
+    the previous return value
+  - A byte array containing the data that should be passed to
+    `ACCEPT-SEC` on the peer
+  - A list of flags indicating what features are supported
+
+Since we used the flag `:MUTUAL`, the first return value will be `T`,
+since `INIT-SEC` needs to validate the identity of the peer.
+
+The next step is to transfer the byte array that was returned as the
+second return value to the peer and pass it to `ACCEPT-SEC`:
+
+```lisp
+  (cl-gss:accept-sec buffer)
+```
+
+The call will return 5 values:
+
+  - A flag indicating whether `ACCEPT-SEC` expects more data from the
+    originating process. The behaviour of this flag is similar to that
+    of the first return value from `INIT-SEC`.
+  - The context that will be used to encrypt and decrypt messages
+  - The name of the principal that initiated the handshake
+  - A byte array that should be sent to the originating side and
+    passed to `INIT-SEC`
+  - A list of flags that describes what features are supported
+
+The name that was returned as the third return value is in an opaque
+form but can be converted to a string using the function
+`NAME-TO-STRING`. This name can then be used for authorisation checks.
+
+```lisp
+  (let ((user-name (cl-gss:name-to-string name)))
+    (unless (equal user-name "some-name")
+      (error "No permission to access service")))
+```

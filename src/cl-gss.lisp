@@ -31,6 +31,27 @@
            (let ((,sym ,buffer-sym))
              ,@body))))))
 
+(defun array-to-foreign-char-array (array)
+  (labels ((mk-byte8 (a)
+             (let ((result (make-array (length a) :element-type '(unsigned-byte 8))))
+               (map-into result #'(lambda (v)
+                                    (unless (typep v '(unsigned-byte 8))
+                                      (error "Value ~s in input array is not an (UNSIGNED-BYTE 8)" v))
+                                    v)
+                         array)
+               result)))
+    (let ((result (typecase array
+                    ((unsigned-byte 8) array)
+                    (t (mk-byte8 array)))))
+      (cffi:convert-to-foreign result (list :array :unsigned-char (length array))))))
+
+(defun token->array (token)
+  (if (cffi:null-pointer-p token)
+      nil
+      (cffi:convert-from-foreign (buffer-desc-value token)
+                                 (list :array :unsigned-char
+                                       (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32)))))
+
 (defclass gss-memory-mixin ()
   ((ptr :reader gss-memory-mixin-ptr
         :initarg :ptr)))
@@ -163,18 +184,6 @@
                                 (:trans ,gss-c-trans-flag))
      when (not (zerop (logand value flag-value)))
      collect flag))
-
-(defun token->array (token)
-  (if (cffi:null-pointer-p token)
-      nil
-      (cffi:convert-from-foreign (buffer-desc-value token)
-                                 (list :array :unsigned-char
-                                       (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32)))))
-
-(defun array-to-foreign-char-array (array)
-  (let ((result (make-array (length array) :element-type '(unsigned-byte 8))))
-    (map-into result #'identity array)
-    (cffi:convert-to-foreign result (list :array :unsigned-char (length array)))))
 
 (defun get-or-allocate-context (context)
   (if context
