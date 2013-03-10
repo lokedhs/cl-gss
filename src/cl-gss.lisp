@@ -209,7 +209,7 @@ This function returns the following values:
   (check-type flags list)
   (check-type time-req (integer 0))
   (check-type context (or null context))
-  (check-type input-token (or null simple-vector))
+  (check-type input-token (or null vector))
 
   (let ((name (if (stringp target) (make-name target) target))
         input-token-buffer)
