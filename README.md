@@ -62,3 +62,24 @@ form but can be converted to a string using the function
     (unless (equal user-name "some-name")
       (error "No permission to access service")))
 ```
+
+Once `INIT-SEC` and `ACCEPT-SEC` have returned `NIL` as its first
+return value, the context is ready to be used.
+
+In order to encrypt a packet, use the function `WRAP`. It takes the
+following arguments:
+
+  - A context that had been previously created by `INIT-SEC` or
+    `ACCEPT-SEC`.
+  - A byte array that should be encrypted
+  - A keyword argument `:CONF` specifying a generalised boolean that
+    indicates whether the packet should be encrypted or not. If false,
+    the packet will merely be authenticated, but the content itself
+    will remain unencrypted. The default is `NIL`.
+
+To decrypt a packet, use the function `UNWRAP`. This function takes
+the following arguments:
+
+  - A context that had been previously created by `INIT-SEC` or
+    `ACCEPT-SEC`.
+  - A byte array that should be decrypted
