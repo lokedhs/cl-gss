@@ -41,7 +41,7 @@
                          array)
                result)))
     (let ((result (typecase array
-                    ((unsigned-byte 8) array)
+                    ((simple-array (unsigned-byte 8) (*)) array)
                     (t (mk-byte8 array)))))
       (cffi:convert-to-foreign result (list :array :unsigned-char (length array))))))
 
