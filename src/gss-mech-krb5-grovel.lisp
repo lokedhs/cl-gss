@@ -1,5 +1,6 @@
 (in-package :cl-gss)
 
+(include "time.h")
 (include "gssapi/gssapi.h")
 (include "gssapi/gssapi_krb5.h")
 
