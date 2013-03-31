@@ -38,7 +38,7 @@ This call returns several values:
   - A boolean value indicating whether `INIT-SEC` expects a reply from
     the peer before the context is ready
   - The context that may or may not be ready for use (as indicated by
-    the previous return value
+    the previous return value)
   - A byte array containing the data that should be passed to
     `ACCEPT-SEC` on the peer
   - A list of flags indicating what features are supported
