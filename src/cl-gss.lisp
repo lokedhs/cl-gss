@@ -74,9 +74,10 @@
 (defmethod initialize-instance :after ((obj context) &key &allow-other-keys)
   (let ((ptr (gss-memory-mixin-ptr obj)))
     (trivial-garbage:finalize obj #'(lambda ()
-                                      (cffi:with-foreign-objects ((h 'gss-ctx-id-t))
+                                      (cffi:with-foreign-objects ((h 'gss-ctx-id-t)
+                                                                  (output 'gss-buffer-desc))
                                         (setf (cffi:mem-ref h 'gss-ctx-id-t) ptr)
-                                        (gss-call m (gss-delete-sec-context m h gss-c-no-buffer)))))))
+                                        (gss-call m (gss-delete-sec-context m h output)))))))
 
 (defgeneric release-gss-object (value)
   (:method ((value name))
