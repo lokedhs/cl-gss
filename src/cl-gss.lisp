@@ -120,10 +120,10 @@
 
 (defun make-name (name-string)
   (check-type name-string string)
-  (cffi:with-foreign-string (foreign-name-string name-string)
+  (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) name-string)
     (cffi:with-foreign-objects ((buf 'gss-buffer-desc)
                                 (output-name 'gss-name-t))
-      (setf (buffer-desc-length buf) (1+ (length name-string)))
+      (setf (buffer-desc-length buf) (1+ foreign-name-string-length))
       (setf (buffer-desc-value buf) foreign-name-string)
       (gss-call minor (gss-import-name minor buf *gss-c-nt-hostbased-service* output-name))
       (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t)))))
