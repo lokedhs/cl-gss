@@ -120,7 +120,7 @@
 
 (defun make-name (name-string)
   (check-type name-string string)
-  (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) name-string)
+  (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) name-string :null-terminated-p nil)
     (cffi:with-foreign-objects ((buf '(:struct gss-buffer-desc))
                                 (output-name 'gss-name-t))
       (setf (buffer-desc-length buf) foreign-name-string-length)
@@ -132,7 +132,8 @@
   (cffi:with-foreign-objects ((output-name '(:struct gss-buffer-desc))
                               (output-type 'gss-oid))
     (gss-call m (gss-display-name m (gss-memory-mixin-ptr name) output-name output-type))
-    (cffi:convert-from-foreign (buffer-desc-value output-name) :string)))
+    (values (cffi:foreign-string-to-lisp (buffer-desc-value output-name)
+                                         :count (buffer-desc-length output-name)))))
 
 (defun errors-as-string (major-status &optional minor-status minor-mech-oid)
   (labels ((extract-error (status status-code-type mech)
@@ -148,7 +149,8 @@
                                      (when (error-p display-result)
                                        (error "call to gss-display-status failed with status=~s"
                                               display-result))
-                                     (cffi:convert-from-foreign (buffer-desc-value status-output) :string))
+                                     (cffi:foreign-string-to-lisp (buffer-desc-value status-output)
+                                                                  :count (buffer-desc-length status-output)))
                                 (when (error-p (gss-release-buffer minor status-output))
                                   (error "failed to release memory from gss-display-status")))))
                   until (zerop (cffi:mem-ref message-context 'om-uint32))))))
