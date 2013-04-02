@@ -25,7 +25,7 @@
         (buffer-sym (gensym "EXTERNAL-BUFFER-")))
     `(let ((,array-copy ,buffer))
        (with-foreign-buffer-from-byte-array (,mem-sym buffer)
-         (cffi:with-foreign-objects ((,buffer-sym 'gss-buffer-desc))
+         (cffi:with-foreign-objects ((,buffer-sym '(:struct gss-buffer-desc)))
            (setf (buffer-desc-length ,buffer-sym) (length ,array-copy))
            (setf (buffer-desc-value ,buffer-sym) ,mem-sym)
            (let ((,sym ,buffer-sym))
@@ -75,7 +75,7 @@
   (let ((ptr (gss-memory-mixin-ptr obj)))
     (trivial-garbage:finalize obj #'(lambda ()
                                       (cffi:with-foreign-objects ((h 'gss-ctx-id-t)
-                                                                  (output 'gss-buffer-desc))
+                                                                  (output '(:struct gss-buffer-desc)))
                                         (setf (cffi:mem-ref h 'gss-ctx-id-t) ptr)
                                         (gss-call m (gss-delete-sec-context m h output)))))))
 
@@ -121,7 +121,7 @@
 (defun make-name (name-string)
   (check-type name-string string)
   (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) name-string)
-    (cffi:with-foreign-objects ((buf 'gss-buffer-desc)
+    (cffi:with-foreign-objects ((buf '(:struct gss-buffer-desc))
                                 (output-name 'gss-name-t))
       (setf (buffer-desc-length buf) (1+ foreign-name-string-length))
       (setf (buffer-desc-value buf) foreign-name-string)
@@ -129,7 +129,7 @@
       (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t)))))
 
 (defun name-to-string (name)
-  (cffi:with-foreign-objects ((output-name 'gss-buffer-desc)
+  (cffi:with-foreign-objects ((output-name '(:struct gss-buffer-desc))
                               (output-type 'gss-oid))
     (gss-call m (gss-display-name m (gss-memory-mixin-ptr name) output-name output-type))
     (cffi:convert-from-foreign (buffer-desc-value output-name) :string)))
@@ -140,7 +140,7 @@
                (loop
                   repeat 8 ; Prevent heap overflow if the loop never exits
                   collect (cffi:with-foreign-objects ((minor 'om-uint32)
-                                                      (status-output 'gss-buffer-desc))
+                                                      (status-output '(:struct gss-buffer-desc)))
                             (let ((display-result (gss-display-status minor status status-code-type mech
                                                                       message-context status-output)))
                               (unwind-protect
@@ -214,10 +214,10 @@ This function returns the following values:
 
   (let ((name (if (stringp target) (make-name target) target))
         input-token-buffer)
-    (cffi:with-foreign-objects ((input-token-content 'gss-buffer-desc)
+    (cffi:with-foreign-objects ((input-token-content '(:struct gss-buffer-desc))
                                 (context-handle 'gss-ctx-id-t)
                                 (actual-mech-type 'gss-oid)
-                                (output-token 'gss-buffer-desc)
+                                (output-token '(:struct gss-buffer-desc))
                                 (ret-flags 'om-uint32)
                                 (time-rec 'om-uint32))
       (setf (cffi:mem-ref context-handle 'gss-ctx-id-t) (get-or-allocate-context context))
@@ -272,9 +272,9 @@ Return values are:
           possible flags: :DELEG, :MUTUAL, :REPLAY, :SEQUENCE, :CONF, :INTEG, :ANON"
 
   (cffi:with-foreign-objects ((context-handle 'gss-ctx-id-t)
-                              (input-token-buffer 'gss-buffer-desc)
+                              (input-token-buffer '(:struct gss-buffer-desc))
                               (src-name 'gss-name-t)
-                              (output-token 'gss-buffer-desc)
+                              (output-token '(:struct gss-buffer-desc))
                               (ret-flags 'om-uint32)
                               (time-rec 'om-uint32))
     (setf (cffi:mem-ref context-handle 'gss-ctx-id-t) (get-or-allocate-context context))
@@ -315,8 +315,8 @@ data as a byte array, and a second boolean return value that incidates whether t
 message was encrypted or not."
   (let ((foreign-buffer (array-to-foreign-char-array buffer)))
     (unwind-protect
-         (cffi:with-foreign-objects ((input-foreign-desc 'gss-buffer-desc)
-                                     (output-foreign-desc 'gss-buffer-desc)
+         (cffi:with-foreign-objects ((input-foreign-desc '(:struct gss-buffer-desc))
+                                     (output-foreign-desc '(:struct gss-buffer-desc))
                                      (conf-state :int))
            (setf (buffer-desc-length input-foreign-desc) (length buffer))
            (setf (buffer-desc-value input-foreign-desc) foreign-buffer)
@@ -341,7 +341,7 @@ message was encrypted or not."
 BUFFER is the protected byte array. This function returns the unwrapped buffer, as well
 as a boolean indicating whether the original message was encrypted."
   (with-buffer-desc (input-message-buffer buffer)
-    (cffi:with-foreign-objects ((output-message-buffer 'gss-buffer-desc)
+    (cffi:with-foreign-objects ((output-message-buffer '(:struct gss-buffer-desc))
                                 (conf-state :int)
                                 (qop-state 'gss-qop-t))
       (gss-call m (gss-unwrap m
