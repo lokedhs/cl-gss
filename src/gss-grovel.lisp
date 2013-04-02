@@ -71,8 +71,10 @@
 
 (ctype om-uint32 "OM_uint32")
 
+(ctype size-t "size_t")
+
 (cstruct gss-buffer-desc "gss_buffer_desc"
-         (length "length" :type om-uint32)
+         (length "length" :type size-t)
          (value "value" :type :pointer))
 ;(ctype gss-buffer-t (:pointer gss-buffer-desc))
 
