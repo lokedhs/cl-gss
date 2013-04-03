@@ -253,7 +253,10 @@ This function returns the following values:
              (unwind-protect
                   (values (continue-needed-p result)
                           (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
-                          (token->array output-token)
+                          (let ((array (token->array output-token)))
+                            (if (zerop (length array))
+                                nil
+                                array))
                           (make-flags-list (cffi:mem-ref ret-flags 'om-uint32)))
                (cffi:with-foreign-objects ((minor 'om-uint32))
                  (gss-release-buffer minor output-token))))
