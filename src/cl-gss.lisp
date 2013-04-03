@@ -82,10 +82,6 @@
                                         (setf (cffi:mem-ref h 'gss-ctx-id-t) ptr)
                                         (gss-call m (gss-delete-sec-context m h output)))))))
 
-(defgeneric release-gss-object (value)
-  (:method ((value name))
-    (format *error-output* "explicit release is not currently supported~%")))
-
 (define-condition gss-error (error)
   ((major-errors :type list
                  :initarg :major-errors
