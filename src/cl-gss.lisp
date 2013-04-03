@@ -31,7 +31,7 @@
            (let ((,sym ,buffer-sym))
              ,@body))))))
 
-(defun array-to-foreign-char-array (array)
+(defun convert-to-bytes (array)
   (labels ((mk-byte8 (a)
              (let ((result (make-array (length a) :element-type '(unsigned-byte 8))))
                (map-into result #'(lambda (v)
@@ -40,17 +40,20 @@
                                     v)
                          array)
                result)))
-    (let ((result (typecase array
-                    ((simple-array (unsigned-byte 8) (*)) array)
-                    (t (mk-byte8 array)))))
-      (cffi:convert-to-foreign result (list :array :unsigned-char (length array))))))
+    (typecase array
+      ((simple-array (unsigned-byte 8) (*)) array)
+      (t (mk-byte8 array)))))
+
+(defun array-to-foreign-char-array (array)
+  (let ((result (convert-to-bytes array)))
+    (cffi:convert-to-foreign result (list :array :unsigned-char (length result)))))
 
 (defun token->array (token)
   (if (cffi:null-pointer-p token)
       nil
-      (cffi:convert-from-foreign (buffer-desc-value token)
-                                 (list :array :unsigned-char
-                                       (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32)))))
+      (convert-to-bytes (cffi:convert-from-foreign (buffer-desc-value token)
+                                                    (list :array :unsigned-char
+                                                          (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32))))))
 
 (defclass gss-memory-mixin ()
   ((ptr :reader gss-memory-mixin-ptr
