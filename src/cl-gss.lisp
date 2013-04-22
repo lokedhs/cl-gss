@@ -128,6 +128,8 @@
       (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t)))))
 
 (defun name-to-string (name)
+  "Return the string representation of NAME"
+  (check-type name name)
   (cffi:with-foreign-objects ((output-name '(:struct gss-buffer-desc))
                               (output-type 'gss-oid))
     (gss-call m (gss-display-name m (gss-memory-mixin-ptr name) output-name output-type))
