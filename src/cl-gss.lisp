@@ -319,6 +319,7 @@ Return values are:
 The buffer will be encrypted if CONF is non-NIL. This function returns the encrypted
 data as a byte array, and a second boolean return value that incidates whether the
 message was encrypted or not."
+  (check-type context context)
   (let ((foreign-buffer (array-to-foreign-char-array buffer)))
     (unwind-protect
          (cffi:with-foreign-objects ((input-foreign-desc '(:struct gss-buffer-desc))
@@ -346,6 +347,7 @@ message was encrypted or not."
   "Convert an wrapped buffer into usable form. CONTEXT is the security context to use,
 BUFFER is the protected byte array. This function returns the unwrapped buffer, as well
 as a boolean indicating whether the original message was encrypted."
+  (check-type context context)
   (with-buffer-desc (input-message-buffer buffer)
     (cffi:with-foreign-objects ((output-message-buffer '(:struct gss-buffer-desc))
                                 (conf-state :int)
