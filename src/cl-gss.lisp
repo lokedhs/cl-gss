@@ -72,7 +72,7 @@
 
 (defclass context (gss-memory-mixin)
   ()
-  (:documentation "Wrapper class for instances fo gss-ctx-id-t"))
+  (:documentation "Wrapper class for instances of gss-ctx-id-t"))
 
 (defmethod initialize-instance :after ((obj context) &key &allow-other-keys)
   (let ((ptr (gss-memory-mixin-ptr obj)))
