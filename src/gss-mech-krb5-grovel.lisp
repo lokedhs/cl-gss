@@ -12,4 +12,4 @@
 (cstruct gss-krb5-rfc1964-keydata-t "gss_krb5_rfc1964_keydata_t"
          (sign-alg "sign_alg" :type om-uint32)
          (seal-alg "seal_alg" :type om-uint32)
-         (ctx-key "ctx_key" :type gss-krb5-lucid-key-t))
+         (ctx-key "ctx_key" :type (:struct gss-krb5-lucid-key-t)))
