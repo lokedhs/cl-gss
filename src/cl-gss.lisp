@@ -118,6 +118,9 @@
   (/= (logand result gss-s-continue-needed) 0))
 
 (defun make-name (name-string)
+  "Create a new name object representing the given name.
+This function implements the functionality of the GSSAPI
+function `gss_import_name'."
   (check-type name-string string)
   (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) name-string :null-terminated-p nil)
     (cffi:with-foreign-objects ((buf '(:struct gss-buffer-desc))
@@ -135,6 +138,19 @@
     (gss-call m (gss-display-name m (gss-memory-mixin-ptr name) output-name output-type))
     (values (cffi:foreign-string-to-lisp (buffer-desc-value output-name)
                                          :count (buffer-desc-length output-name)))))
+
+(defun compare-name (name1 name2)
+  "Compares two name objects. This function returns non-NIL if the two
+name objects refers to the same entity. This function implements
+the functionality of the GSSAPI function `gss_compare_name'."
+  (check-type name1 name)
+  (check-type name2 name)
+  (cffi:with-foreign-objects ((result :int))
+    (gss-call m (gss-compare-name m
+                                  (gss-memory-mixin-ptr name1)
+                                  (gss-memory-mixin-ptr name2)
+                                  result))
+    (not (zerop (cffi:mem-ref result :int)))))
 
 (defun errors-as-string (major-status &optional minor-status minor-mech-oid)
   (labels ((extract-error (status status-code-type mech)

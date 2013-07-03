@@ -9,7 +9,8 @@
            #:init-sec
            #:accept-sec
            #:wrap
-           #:unwrap))
+           #:unwrap
+           #:compare-name))
 
 (in-package :cl-gss)
 
