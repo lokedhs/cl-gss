@@ -57,7 +57,11 @@
 
 (defclass gss-memory-mixin ()
   ((ptr :reader gss-memory-mixin-ptr
-        :initarg :ptr)))
+        :initarg :ptr
+        :documentation "The wrapped pointer"))
+  (:documentation "Mixing class for types that wraps a pointer needs to
+be released after the instance is no longer referenced. The actual
+registration of the object is handled by the subclass."))
 
 (defclass name (gss-memory-mixin)
   ()
@@ -327,7 +331,7 @@ Return values are:
 ;;;  Implements gss_wrap
 ;;;
 (defun wrap (context buffer &key conf)
-  "Wrap a the byte array in BUFFER in an cryptographic wrapper, using the specified CONTEXT.
+  "Wrap a the byte array in BUFFER in a cryptographic wrapper, using the specified CONTEXT.
 The buffer will be encrypted if CONF is non-NIL. This function returns the encrypted
 data as a byte array, and a second boolean return value that incidates whether the
 message was encrypted or not."
