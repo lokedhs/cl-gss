@@ -173,7 +173,7 @@ the functionality of the GSSAPI function `gss_compare_name'."
                   until (zerop (cffi:mem-ref message-context 'om-uint32))))))
     (when (error-p major-status)
       (list (extract-error major-status gss-c-gss-code *gss-c-no-oid*)
-            (if (and minor-status minor-mech-oid (not (zerop minor-status)))
+            (if (and minor-status minor-mech-oid (not (error-p minor-status)))
                 (extract-error minor-status gss-c-mech-code minor-mech-oid)
                 nil)))))
 
@@ -338,25 +338,20 @@ The buffer will be encrypted if CONF is non-NIL. This function returns the encry
 data as a byte array, and a second boolean return value that incidates whether the
 message was encrypted or not."
   (check-type context context)
-  (let ((foreign-buffer (array-to-foreign-char-array buffer)))
-    (unwind-protect
-         (cffi:with-foreign-objects ((input-foreign-desc '(:struct gss-buffer-desc))
-                                     (output-foreign-desc '(:struct gss-buffer-desc))
-                                     (conf-state :int))
-           (setf (buffer-desc-length input-foreign-desc) (length buffer))
-           (setf (buffer-desc-value input-foreign-desc) foreign-buffer)
-           (gss-call m (gss-wrap m
-                                 (gss-memory-mixin-ptr context)
-                                 (if conf 1 0)
-                                 gss-c-qop-default
-                                 input-foreign-desc
-                                 conf-state
-                                 output-foreign-desc))
-           (unwind-protect
-                (values (token->array output-foreign-desc)
-                        (not (zerop (cffi:mem-ref conf-state :int))))
-             (gss-call m (gss-release-buffer m output-foreign-desc))))
-      (cffi:foreign-free foreign-buffer))))
+  (with-buffer-desc (input-foreign-desc buffer)
+    (cffi:with-foreign-objects ((output-foreign-desc '(:struct gss-buffer-desc))
+                                (conf-state :int))
+      (gss-call m (gss-wrap m
+                            (gss-memory-mixin-ptr context)
+                            (if conf 1 0)
+                            gss-c-qop-default
+                            input-foreign-desc
+                            conf-state
+                            output-foreign-desc))
+      (unwind-protect
+           (values (token->array output-foreign-desc)
+                   (not (zerop (cffi:mem-ref conf-state :int))))
+        (gss-call m (gss-release-buffer m output-foreign-desc))))))
 
 ;;;
 ;;;  Implements gss_unwrap
@@ -388,7 +383,9 @@ as a boolean indicating whether the original message was encrypted."
   "Register a server's identity. FILE is a keytab file containing the
 credentials to be used."
   (check-type file (or string pathname))
-  (let ((pathname (pathname file)))
-    (unless (probe-file pathname)
-      (error "Keytab file does not exist: ~a" pathname))
-    (krb5-register-acceptor-identity-ffi (namestring pathname))))
+  (let ((pathname (probe-file (pathname file))))
+    (unless pathname
+      (error "Keytab file does not exist: ~a" file))
+    (let ((result (%krb5-register-acceptor-identity (namestring pathname))))
+      (when (error-p result)
+        (raise-error result nil nil)))))
