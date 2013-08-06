@@ -275,6 +275,8 @@ Return values are:
   FLAGS - a list of flags that describe various properties of the session.
           possible flags: :DELEG, :MUTUAL, :REPLAY, :SEQUENCE, :CONF, :INTEG, :ANON"
 
+  (check-type buffer vector)
+  (check-type context (or null context))
   (cffi:with-foreign-objects ((context-handle 'gss-ctx-id-t)
                               (input-token-buffer '(:struct gss-buffer-desc))
                               (src-name 'gss-name-t)
@@ -309,9 +311,9 @@ Return values are:
                    (gss-release-buffer minor output-token)))))
         (cffi:foreign-free foreign-buffer)))))
 
-;;
-;;  Implements gss_wrap
-;;
+;;;
+;;;  Implements gss_wrap
+;;;
 (defun wrap (context buffer &key conf)
   "Wrap a the byte array in BUFFER in an cryptographic wrapper, using the specified CONTEXT.
 The buffer will be encrypted if CONF is non-NIL. This function returns the encrypted
@@ -337,9 +339,9 @@ message was encrypted or not."
              (gss-call m (gss-release-buffer m output-foreign-desc))))
       (cffi:foreign-free foreign-buffer))))
 
-;;
-;;  Implements gss_unwrap
-;;
+;;;
+;;;  Implements gss_unwrap
+;;;
 (defun unwrap (context buffer)
   "Convert an wrapped buffer into usable form. CONTEXT is the security context to use,
 BUFFER is the protected byte array. This function returns the unwrapped buffer, as well
@@ -358,3 +360,15 @@ as a boolean indicating whether the original message was encrypted."
            (values (token->array output-message-buffer)
                    (not (zerop (cffi:mem-ref conf-state :int))))
         (gss-call m (gss-release-buffer m output-message-buffer))))))
+
+;;;
+;;;  Credentials import
+;;;
+(defun krb5-register-acceptor-identity (file)
+  "Register a server's identity. FILE is a keytab file containing the
+credentials to be used."
+  (check-type file (or string pathname))
+  (let ((pathname (pathname file)))
+    (unless (probe-file pathname)
+      (error "Keytab file does not exist: ~a" pathname))
+    (krb5-register-acceptor-identity-ffi (namestring pathname))))

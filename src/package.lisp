@@ -9,7 +9,8 @@
            #:init-sec
            #:accept-sec
            #:wrap
-           #:unwrap))
+           #:unwrap
+           #:krb5-register-acceptor-identity))
 
 (in-package :cl-gss)
 
