@@ -296,38 +296,32 @@ Return values are:
   (check-type buffer vector)
   (check-type context (or null context))
   (cffi:with-foreign-objects ((context-handle 'gss-ctx-id-t)
-                              (input-token-buffer '(:struct gss-buffer-desc))
                               (src-name 'gss-name-t)
                               (output-token '(:struct gss-buffer-desc))
                               (ret-flags 'om-uint32)
                               (time-rec 'om-uint32))
     (setf (cffi:mem-ref context-handle 'gss-ctx-id-t) (get-or-allocate-context context))
-    (let ((foreign-buffer (array-to-foreign-char-array buffer)))
-      (unwind-protect
-           (progn
-             (setf (buffer-desc-length input-token-buffer) (length buffer))
-             (setf (buffer-desc-value input-token-buffer) foreign-buffer)
-             (let ((result (gss-call m (gss-accept-sec-context m ;minor
-                                                               context-handle ;context-handle
-                                                               gss-c-no-credential ;acceptor-cred-handle
-                                                               input-token-buffer ;input buffer
-                                                               gss-c-no-channel-bindings ;chan bindings
-                                                               src-name ;src name
-                                                               (cffi:null-pointer) ;mech type
-                                                               output-token ;output token
-                                                               ret-flags ;ret flags
-                                                               time-rec ;time rec
-                                                               (cffi-sys:null-pointer) ;delegated cred handle
-                                                               ))))
-               (unwind-protect
-                    (values (continue-needed-p result)
-                            (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
-                            (make-instance 'name :ptr (cffi:mem-ref src-name 'gss-name-t))
-                            (token->array output-token)
-                            (make-flags-list (cffi:mem-ref time-rec 'om-uint32)))
-                 (cffi:with-foreign-objects ((minor 'om-uint32))
-                   (gss-release-buffer minor output-token)))))
-        (cffi:foreign-free foreign-buffer)))))
+    (with-buffer-desc (input-token-buffer buffer)
+      (let ((result (gss-call m (gss-accept-sec-context m ;minor
+                                                        context-handle ;context-handle
+                                                        gss-c-no-credential ;acceptor-cred-handle
+                                                        input-token-buffer ;input buffer
+                                                        gss-c-no-channel-bindings ;chan bindings
+                                                        src-name ;src name
+                                                        (cffi:null-pointer) ;mech type
+                                                        output-token ;output token
+                                                        ret-flags ;ret flags
+                                                        time-rec ;time rec
+                                                        (cffi-sys:null-pointer) ;delegated cred handle
+                                                        ))))
+        (unwind-protect
+             (values (continue-needed-p result)
+                     (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
+                     (make-instance 'name :ptr (cffi:mem-ref src-name 'gss-name-t))
+                     (token->array output-token)
+                     (make-flags-list (cffi:mem-ref time-rec 'om-uint32)))
+          (cffi:with-foreign-objects ((minor 'om-uint32))
+            (gss-release-buffer minor output-token)))))))
 
 ;;;
 ;;;  Implements gss_wrap
