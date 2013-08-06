@@ -72,7 +72,7 @@
 
 (defclass context (gss-memory-mixin)
   ()
-  (:documentation "Wrapper class for instances fo gss-ctx-id-t"))
+  (:documentation "Wrapper class for instances of gss-ctx-id-t"))
 
 (defmethod initialize-instance :after ((obj context) &key &allow-other-keys)
   (let ((ptr (gss-memory-mixin-ptr obj)))
@@ -118,6 +118,9 @@
   (/= (logand result gss-s-continue-needed) 0))
 
 (defun make-name (name-string)
+  "Create a new name object representing the given name.
+This function implements the functionality of the GSSAPI
+function `gss_import_name'."
   (check-type name-string string)
   (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) name-string :null-terminated-p nil)
     (cffi:with-foreign-objects ((buf '(:struct gss-buffer-desc))
@@ -128,11 +131,26 @@
       (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t)))))
 
 (defun name-to-string (name)
+  "Return the string representation of NAME"
+  (check-type name name)
   (cffi:with-foreign-objects ((output-name '(:struct gss-buffer-desc))
                               (output-type 'gss-oid))
     (gss-call m (gss-display-name m (gss-memory-mixin-ptr name) output-name output-type))
     (values (cffi:foreign-string-to-lisp (buffer-desc-value output-name)
                                          :count (buffer-desc-length output-name)))))
+
+(defun compare-name (name1 name2)
+  "Compares two name objects. This function returns non-NIL if the two
+name objects refers to the same entity. This function implements
+the functionality of the GSSAPI function `gss_compare_name'."
+  (check-type name1 name)
+  (check-type name2 name)
+  (cffi:with-foreign-objects ((result :int))
+    (gss-call m (gss-compare-name m
+                                  (gss-memory-mixin-ptr name1)
+                                  (gss-memory-mixin-ptr name2)
+                                  result))
+    (not (zerop (cffi:mem-ref result :int)))))
 
 (defun errors-as-string (major-status &optional minor-status minor-mech-oid)
   (labels ((extract-error (status status-code-type mech)
@@ -319,6 +337,7 @@ Return values are:
 The buffer will be encrypted if CONF is non-NIL. This function returns the encrypted
 data as a byte array, and a second boolean return value that incidates whether the
 message was encrypted or not."
+  (check-type context context)
   (let ((foreign-buffer (array-to-foreign-char-array buffer)))
     (unwind-protect
          (cffi:with-foreign-objects ((input-foreign-desc '(:struct gss-buffer-desc))
@@ -346,6 +365,7 @@ message was encrypted or not."
   "Convert an wrapped buffer into usable form. CONTEXT is the security context to use,
 BUFFER is the protected byte array. This function returns the unwrapped buffer, as well
 as a boolean indicating whether the original message was encrypted."
+  (check-type context context)
   (with-buffer-desc (input-message-buffer buffer)
     (cffi:with-foreign-objects ((output-message-buffer '(:struct gss-buffer-desc))
                                 (conf-state :int)

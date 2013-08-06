@@ -93,6 +93,12 @@
   (conf-state (:pointer :int))
   (qop-state (:pointer gss-qop-t)))
 
+(cffi:defcfun ("gss_compare_name" gss-compare-name) om-uint32
+  (minor-status (:pointer om-uint32))
+  (name1 gss-name-t)
+  (name2 gss-name-t)
+  (name-equal (:pointer :int)))
+
 (defmacro buffer-desc-length (buf)
   `(cffi:foreign-slot-value ,buf '(:struct gss-buffer-desc) 'length))
 
