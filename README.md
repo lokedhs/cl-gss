@@ -4,8 +4,8 @@ cl-gss - Common Lisp bindings for GSS-API
 Author contact information
 --------------------------
 
-Elias Martenson
-Email: lokedhs@gmail.com
+  - Elias Martenson
+  - Email: lokedhs@gmail.com
 
 Summary
 -------
