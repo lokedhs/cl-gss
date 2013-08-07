@@ -377,6 +377,9 @@ as a boolean indicating whether the original message was encrypted."
 ;;;
 ;;;  Credentials import
 ;;;
+(defparameter *register-ffi-functions* '("krb5_gss_register_acceptor_identity"
+                                         "gsskrb5_register_acceptor_identity"))
+
 (defun krb5-register-acceptor-identity (file)
   "Register a server's identity. FILE is a keytab file containing the
 credentials to be used."
@@ -384,6 +387,14 @@ credentials to be used."
   (let ((pathname (probe-file (pathname file))))
     (unless pathname
       (error "Keytab file does not exist: ~a" file))
-    (let ((result (%krb5-register-acceptor-identity (namestring pathname))))
-      (when (error-p result)
-        (raise-error result nil nil)))))
+    (let ((n (namestring pathname)))
+      (loop
+         for ffi-name in *register-ffi-functions*
+         for ffi-fn = (cffi:foreign-symbol-pointer ffi-name)
+         do (format t "checking ~s -> ~s~%" ffi-name ffi-fn)
+         when ffi-fn
+         do (let ((result (cffi:foreign-funcall-pointer ffi-fn () :string n om-uint32)))
+              (when (error-p result)
+                (raise-error result nil nil))
+              (return nil))
+         finally (error "Could not find acceptor function")))))
