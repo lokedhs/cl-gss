@@ -391,7 +391,6 @@ credentials to be used."
       (loop
          for ffi-name in *register-ffi-functions*
          for ffi-fn = (cffi:foreign-symbol-pointer ffi-name)
-         do (format t "checking ~s -> ~s~%" ffi-name ffi-fn)
          when ffi-fn
          do (let ((result (cffi:foreign-funcall-pointer ffi-fn () :string n om-uint32)))
               (when (error-p result)
