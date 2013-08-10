@@ -46,7 +46,17 @@
 
 (defun array-to-foreign-char-array (array)
   (let ((result (convert-to-bytes array)))
-    (cffi:convert-to-foreign result (list :array :unsigned-char (length result)))))
+    ;; Due to a bug in ABCL, CFFI:CONVERT-TO-FOREIGN cannot be used.
+    ;; Until this bug is fixed, let's just use a workaround.
+    #-abcl (cffi:convert-to-foreign result (list :array :unsigned-char (length result)))
+    #+abcl (let* ((length (length result))
+                  (type (list :array :unsigned-char length))
+                  (foreign-array (cffi:foreign-alloc type :count length)))
+             (loop
+                for v across result
+                for i from 0
+                do (setf (cffi:mem-aref foreign-array :unsigned-char i) v))
+             foreign-array)))
 
 (defun token->array (token)
   (if (cffi:null-pointer-p token)
