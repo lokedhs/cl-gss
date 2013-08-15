@@ -365,7 +365,7 @@ message was encrypted or not."
 ;;;  Implements gss_unwrap
 ;;;
 (defun unwrap (context buffer)
-  "Convert an wrapped buffer into usable form. CONTEXT is the security context to use,
+  "Convert a wrapped buffer into usable form. CONTEXT is the security context to use,
 BUFFER is the protected byte array. This function returns the unwrapped buffer, as well
 as a boolean indicating whether the original message was encrypted."
   (check-type context context)
