@@ -6,6 +6,7 @@
            #:gss-error-major-messages
            #:make-name
            #:name-to-string
+           #:compare-name
            #:init-sec
            #:accept-sec
            #:wrap
