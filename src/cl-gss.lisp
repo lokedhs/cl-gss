@@ -169,7 +169,7 @@ function `gss_import_name'."
       (gss-call minor (gss-import-name minor buf *gss-c-nt-hostbased-service* output-name))
       (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t)))))
 
-(defun name-to-display (name)
+(defun name-to-string (name)
   "Return the string representation of NAME. This value should not be
 used for access verification. Use NAME-TO-STRING for this instead."
   (check-type name name)
@@ -181,7 +181,7 @@ used for access verification. Use NAME-TO-STRING for this instead."
                                               :count (buffer-desc-length output-name)))
       (gss-call m (gss-release-buffer m output-name)))))
 
-(defun name-to-string (name)
+(defun name-to-exported-form (name)
   "Return the string representation of NAME. This value can be used
 for access verfication."
   (check-type name name)

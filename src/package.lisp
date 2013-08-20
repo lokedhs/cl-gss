@@ -11,8 +11,7 @@
            #:accept-sec
            #:wrap
            #:unwrap
-           #:krb5-register-acceptor-identity
-           #:name-to-display-string))
+           #:krb5-register-acceptor-identity))
 
 (in-package :cl-gss)
 
