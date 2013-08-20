@@ -31,40 +31,6 @@
            (let ((,sym ,buffer-sym))
              ,@body))))))
 
-(defun convert-to-bytes (array)
-  (labels ((mk-byte8 (a)
-             (let ((result (make-array (length a) :element-type '(unsigned-byte 8))))
-               (map-into result #'(lambda (v)
-                                    (unless (typep v '(unsigned-byte 8))
-                                      (error "Value ~s in input array is not an (UNSIGNED-BYTE 8)" v))
-                                    v)
-                         array)
-               result)))
-    (typecase array
-      ((simple-array (unsigned-byte 8) (*)) array)
-      (t (mk-byte8 array)))))
-
-(defun array-to-foreign-char-array (array)
-  (let ((result (convert-to-bytes array)))
-    ;; Due to a bug in ABCL, CFFI:CONVERT-TO-FOREIGN cannot be used.
-    ;; Until this bug is fixed, let's just use a workaround.
-    #-abcl (cffi:convert-to-foreign result (list :array :unsigned-char (length result)))
-    #+abcl (let* ((length (length result))
-                  (type (list :array :unsigned-char length))
-                  (foreign-array (cffi:foreign-alloc type :count length)))
-             (loop
-                for v across result
-                for i from 0
-                do (setf (cffi:mem-aref foreign-array :unsigned-char i) v))
-             foreign-array)))
-
-(defun token->array (token)
-  (if (cffi:null-pointer-p token)
-      nil
-      (convert-to-bytes (cffi:convert-from-foreign (buffer-desc-value token)
-                                                    (list :array :unsigned-char
-                                                          (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32))))))
-
 (defclass gss-memory-mixin ()
   ((ptr :reader gss-memory-mixin-ptr
         :initarg :ptr
@@ -131,41 +97,6 @@ registration of the object is handled by the subclass."))
 (defun continue-needed-p (result)
   (/= (logand result gss-s-continue-needed) 0))
 
-(defun make-name (name-string)
-  "Create a new name object representing the given name.
-This function implements the functionality of the GSSAPI
-function `gss_import_name'."
-  (check-type name-string string)
-  (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) name-string :null-terminated-p nil)
-    (cffi:with-foreign-objects ((buf '(:struct gss-buffer-desc))
-                                (output-name 'gss-name-t))
-      (setf (buffer-desc-length buf) foreign-name-string-length)
-      (setf (buffer-desc-value buf) foreign-name-string)
-      (gss-call minor (gss-import-name minor buf *gss-c-nt-hostbased-service* output-name))
-      (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t)))))
-
-(defun name-to-string (name)
-  "Return the string representation of NAME"
-  (check-type name name)
-  (cffi:with-foreign-objects ((output-name '(:struct gss-buffer-desc))
-                              (output-type 'gss-oid))
-    (gss-call m (gss-display-name m (gss-memory-mixin-ptr name) output-name output-type))
-    (values (cffi:foreign-string-to-lisp (buffer-desc-value output-name)
-                                         :count (buffer-desc-length output-name)))))
-
-(defun compare-name (name1 name2)
-  "Compares two name objects. This function returns non-NIL if the two
-name objects refers to the same entity. This function implements
-the functionality of the GSSAPI function `gss_compare_name'."
-  (check-type name1 name)
-  (check-type name2 name)
-  (cffi:with-foreign-objects ((result :int))
-    (gss-call m (gss-compare-name m
-                                  (gss-memory-mixin-ptr name1)
-                                  (gss-memory-mixin-ptr name2)
-                                  result))
-    (not (zerop (cffi:mem-ref result :int)))))
-
 (defun errors-as-string (major-status &optional minor-status minor-mech-oid)
   (labels ((extract-error (status status-code-type mech)
              (cffi:with-foreign-objects ((message-context 'om-uint32))
@@ -190,6 +121,89 @@ the functionality of the GSSAPI function `gss_compare_name'."
             (if (and minor-status minor-mech-oid (not (error-p minor-status)))
                 (extract-error minor-status gss-c-mech-code minor-mech-oid)
                 nil)))))
+
+(defun convert-to-bytes (array)
+  (labels ((mk-byte8 (a)
+             (let ((result (make-array (length a) :element-type '(unsigned-byte 8))))
+               (map-into result #'(lambda (v)
+                                    (unless (typep v '(unsigned-byte 8))
+                                      (error "Value ~s in input array is not an (UNSIGNED-BYTE 8)" v))
+                                    v)
+                         array)
+               result)))
+    (typecase array
+      ((simple-array (unsigned-byte 8) (*)) array)
+      (t (mk-byte8 array)))))
+
+(defun array-to-foreign-char-array (array)
+  (let ((result (convert-to-bytes array)))
+    ;; Due to a bug in ABCL, CFFI:CONVERT-TO-FOREIGN cannot be used.
+    ;; Until this bug is fixed, let's just use a workaround.
+    #-abcl (cffi:convert-to-foreign result (list :array :unsigned-char (length result)))
+    #+abcl (let* ((length (length result))
+                  (type (list :array :unsigned-char length))
+                  (foreign-array (cffi:foreign-alloc type :count length)))
+             (loop
+                for v across result
+                for i from 0
+                do (setf (cffi:mem-aref foreign-array :unsigned-char i) v))
+             foreign-array)))
+
+(defun token->array (token)
+  (if (cffi:null-pointer-p token)
+      nil
+      (convert-to-bytes (cffi:convert-from-foreign (buffer-desc-value token)
+                                                    (list :array :unsigned-char
+                                                          (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32))))))
+
+(defun make-name (name-string)
+  "Create a new name object representing the given name.
+This function implements the functionality of the GSSAPI
+function `gss_import_name'."
+  (check-type name-string string)
+  (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) name-string :null-terminated-p nil)
+    (cffi:with-foreign-objects ((buf '(:struct gss-buffer-desc))
+                                (output-name 'gss-name-t))
+      (setf (buffer-desc-length buf) foreign-name-string-length)
+      (setf (buffer-desc-value buf) foreign-name-string)
+      (gss-call minor (gss-import-name minor buf *gss-c-nt-hostbased-service* output-name))
+      (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t)))))
+
+(defun name-to-display (name)
+  "Return the string representation of NAME. This value should not be
+used for access verification. Use NAME-TO-STRING for this instead."
+  (check-type name name)
+  (cffi:with-foreign-objects ((output-name '(:struct gss-buffer-desc))
+                              (output-type 'gss-oid))
+    (gss-call m (gss-display-name m (gss-memory-mixin-ptr name) output-name output-type))
+    (unwind-protect
+         (values (cffi:foreign-string-to-lisp (buffer-desc-value output-name)
+                                              :count (buffer-desc-length output-name)))
+      (gss-call m (gss-release-buffer m output-name)))))
+
+(defun name-to-string (name)
+  "Return the string representation of NAME. This value can be used
+for access verfication."
+  (check-type name name)
+  (cffi:with-foreign-objects ((output-name '(:struct gss-buffer-desc)))
+    (gss-call m (gss-export-name m (gss-memory-mixin-ptr name) output-name))
+    (unwind-protect
+         (values (cffi:foreign-string-to-lisp (buffer-desc-value output-name)
+                                              :count (buffer-desc-length output-name)))
+      (gss-call m (gss-release-buffer m output-name)))))
+
+(defun compare-name (name1 name2)
+  "Compares two name objects. This function returns non-NIL if the two
+name objects refers to the same entity. This function implements
+the functionality of the GSSAPI function `gss_compare_name'."
+  (check-type name1 name)
+  (check-type name2 name)
+  (cffi:with-foreign-objects ((result :int))
+    (gss-call m (gss-compare-name m
+                                  (gss-memory-mixin-ptr name1)
+                                  (gss-memory-mixin-ptr name2)
+                                  result))
+    (not (zerop (cffi:mem-ref result :int)))))
 
 (defun make-flags (flags)
   (loop
@@ -286,8 +300,7 @@ This function returns the following values:
                                 nil
                                 array))
                           (make-flags-list (cffi:mem-ref ret-flags 'om-uint32)))
-               (cffi:with-foreign-objects ((minor 'om-uint32))
-                 (gss-release-buffer minor output-token))))
+               (gss-call m (gss-release-buffer m output-token))))
         (when input-token-buffer (cffi:foreign-free input-token-buffer))))))
 
 ;;;
@@ -334,8 +347,7 @@ Return values are:
                      (make-instance 'name :ptr (cffi:mem-ref src-name 'gss-name-t))
                      (token->array output-token)
                      (make-flags-list (cffi:mem-ref time-rec 'om-uint32)))
-          (cffi:with-foreign-objects ((minor 'om-uint32))
-            (gss-release-buffer minor output-token)))))))
+          (gss-call m (gss-release-buffer m output-token)))))))
 
 ;;;
 ;;;  Implements gss_wrap

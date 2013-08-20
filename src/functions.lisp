@@ -21,11 +21,22 @@
   (input-name-type gss-oid)
   (output-name (:pointer gss-name-t)))
 
+(cffi:defcfun ("gss_compare_name" gss-compare-name) om-uint32
+  (minor-status (:pointer om-uint32))
+  (name1 gss-name-t)
+  (name2 gss-name-t)
+  (name-equal (:pointer :int)))
+
 (cffi:defcfun ("gss_display_name" gss-display-name) om-uint32
   (minor-status (:pointer om-uint32))
   (name gss-name-t)
   (output-name (:pointer (:struct gss-buffer-desc)))
   (output-type (:pointer gss-oid)))
+
+(cffi:defcfun ("gss_export_name" gss-export-name) om-uint32
+  (minor-status (:pointer om-uint32))
+  (name gss-name-t)
+  (exported (:pointer (:struct gss-buffer-desc))))
 
 (cffi:defcfun ("gss_display_status" gss-display-status) om-uint32
   (minor-status (:pointer om-uint32))
@@ -92,12 +103,6 @@
   (output-message-buffer (:pointer (:struct gss-buffer-desc)))
   (conf-state (:pointer :int))
   (qop-state (:pointer gss-qop-t)))
-
-(cffi:defcfun ("gss_compare_name" gss-compare-name) om-uint32
-  (minor-status (:pointer om-uint32))
-  (name1 gss-name-t)
-  (name2 gss-name-t)
-  (name-equal (:pointer :int)))
 
 (defmacro buffer-desc-length (buf)
   `(cffi:foreign-slot-value ,buf '(:struct gss-buffer-desc) 'length))
