@@ -170,8 +170,7 @@ function `gss_import_name'."
       (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t)))))
 
 (defun name-to-string (name)
-  "Return the string representation of NAME. This value should not be
-used for access verification. Use NAME-TO-STRING for this instead."
+  "Return the string representation of NAME."
   (check-type name name)
   (cffi:with-foreign-objects ((output-name '(:struct gss-buffer-desc))
                               (output-type 'gss-oid))
@@ -181,7 +180,7 @@ used for access verification. Use NAME-TO-STRING for this instead."
                                               :count (buffer-desc-length output-name)))
       (gss-call m (gss-release-buffer m output-name)))))
 
-(defun name-to-exported-form (name)
+(defun name-to-export (name)
   "Return the string representation of NAME. This value can be used
 for access verfication."
   (check-type name name)
