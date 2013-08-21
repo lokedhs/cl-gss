@@ -180,17 +180,6 @@ function `gss_import_name'."
                                               :count (buffer-desc-length output-name)))
       (gss-call m (gss-release-buffer m output-name)))))
 
-(defun name-to-export (name)
-  "Return the string representation of NAME. This value can be used
-for access verfication."
-  (check-type name name)
-  (cffi:with-foreign-objects ((output-name '(:struct gss-buffer-desc)))
-    (gss-call m (gss-export-name m (gss-memory-mixin-ptr name) output-name))
-    (unwind-protect
-         (values (cffi:foreign-string-to-lisp (buffer-desc-value output-name)
-                                              :count (buffer-desc-length output-name)))
-      (gss-call m (gss-release-buffer m output-name)))))
-
 (defun compare-name (name1 name2)
   "Compares two name objects. This function returns non-NIL if the two
 name objects refers to the same entity. This function implements
