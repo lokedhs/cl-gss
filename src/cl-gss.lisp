@@ -334,7 +334,7 @@ Return values are:
                      (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
                      (make-instance 'name :ptr (cffi:mem-ref src-name 'gss-name-t))
                      (token->array output-token)
-                     (make-flags-list (cffi:mem-ref time-rec 'om-uint32)))
+                     (make-flags-list (cffi:mem-ref ret-flags 'om-uint32)))
           (gss-call m (gss-release-buffer m output-token)))))))
 
 ;;;
