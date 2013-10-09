@@ -306,7 +306,8 @@ Return values are:
   BUFFER - the buffer that should be sent to the remote service, or NIL if there is
            no need to send more messages
   FLAGS - a list of flags that describe various properties of the session.
-          possible flags: :DELEG, :MUTUAL, :REPLAY, :SEQUENCE, :CONF, :INTEG, :ANON"
+          possible flags: :DELEG, :MUTUAL, :REPLAY, :SEQUENCE, :CONF, :INTEG, :ANON
+  TIME-REC - The length of time that the context will be valid."
 
   (check-type buffer vector)
   (check-type context (or null context))
@@ -334,7 +335,8 @@ Return values are:
                      (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
                      (make-instance 'name :ptr (cffi:mem-ref src-name 'gss-name-t))
                      (token->array output-token)
-                     (make-flags-list (cffi:mem-ref ret-flags 'om-uint32)))
+                     (make-flags-list (cffi:mem-ref ret-flags 'om-uint32))
+                     (cffi:mem-ref time-rec 'om-uint32))
           (gss-call m (gss-release-buffer m output-token)))))))
 
 ;;;
