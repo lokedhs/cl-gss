@@ -13,6 +13,7 @@
   :license "BSD"
   :description "Common Lisp interface to GSSAPI"
   :depends-on (:cffi
+               :cffi-grovel
                :trivial-garbage)
   :components ((:module src
                         :serial t
