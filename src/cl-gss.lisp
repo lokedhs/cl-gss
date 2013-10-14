@@ -35,9 +35,9 @@
   ((ptr :reader gss-memory-mixin-ptr
         :initarg :ptr
         :documentation "The wrapped pointer"))
-  (:documentation "Mixing class for types that wraps a pointer needs to
-be released after the instance is no longer referenced. The actual
-registration of the object is handled by the subclass."))
+  (:documentation "Mixin class for types that wraps a pointer that
+needs to be released after the instance is no longer referenced. The
+actual registration of the object is handled by the subclass."))
 
 (defclass name (gss-memory-mixin)
   ()
