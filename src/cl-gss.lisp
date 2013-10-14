@@ -97,29 +97,32 @@ registration of the object is handled by the subclass."))
 (defun continue-needed-p (result)
   (/= (logand result gss-s-continue-needed) 0))
 
+(defun extract-error-message (status status-code-type mech)
+  (cffi:with-foreign-objects ((message-context 'om-uint32))
+    (setf (cffi:mem-ref message-context 'om-uint32) 0)
+    (loop
+       repeat 8          ; Prevent heap overflow if the loop never exits
+       collect (cffi:with-foreign-objects ((minor 'om-uint32)
+                                           (status-output '(:struct gss-buffer-desc)))
+                 (let ((display-result (gss-display-status minor status status-code-type mech
+                                                           message-context status-output)))
+                   (unwind-protect
+                        (progn
+                          (when (error-p display-result)
+                            (error "call to gss-display-status failed with status=~s"
+                                   display-result))
+                          (cffi:foreign-string-to-lisp (buffer-desc-value status-output)
+                                                       :count (buffer-desc-length status-output)))
+                     (when (error-p (gss-release-buffer minor status-output))
+                       (error "failed to release memory from gss-display-status")))))
+       until (zerop (cffi:mem-ref message-context 'om-uint32)))))
+
 (defun errors-as-string (major-status &optional minor-status minor-mech-oid)
-  (labels ((extract-error (status status-code-type mech)
-             (cffi:with-foreign-objects ((message-context 'om-uint32))
-               (loop
-                  repeat 8 ; Prevent heap overflow if the loop never exits
-                  collect (cffi:with-foreign-objects ((minor 'om-uint32)
-                                                      (status-output '(:struct gss-buffer-desc)))
-                            (let ((display-result (gss-display-status minor status status-code-type mech
-                                                                      message-context status-output)))
-                              (unwind-protect
-                                   (progn
-                                     (when (error-p display-result)
-                                       (error "call to gss-display-status failed with status=~s"
-                                              display-result))
-                                     (cffi:foreign-string-to-lisp (buffer-desc-value status-output)
-                                                                  :count (buffer-desc-length status-output)))
-                                (when (error-p (gss-release-buffer minor status-output))
-                                  (error "failed to release memory from gss-display-status")))))
-                  until (zerop (cffi:mem-ref message-context 'om-uint32))))))
+  (labels ()
     (when (error-p major-status)
-      (list (extract-error major-status gss-c-gss-code *gss-c-no-oid*)
+      (list (extract-error-message major-status gss-c-gss-code *gss-c-no-oid*)
             (if (and minor-status minor-mech-oid (not (error-p minor-status)))
-                (extract-error minor-status gss-c-mech-code minor-mech-oid)
+                (extract-error-message minor-status gss-c-mech-code minor-mech-oid)
                 nil)))))
 
 (defun convert-to-bytes (array)
