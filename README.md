@@ -26,7 +26,7 @@ initialise the handshake. This function takes a single required
 parameter, the service name of service to which you intend to connect.
 
 ```lisp
-  (cl-gss:init-sec "host@domain" :flags '(:mutual))
+(cl-gss:init-sec "host@domain" :flags '(:mutual))
 ```
 
 In this case, we're only passing a single flag, `:MUTUAL`. This flag
@@ -50,7 +50,7 @@ The next step is to transfer the byte array that was returned as the
 second return value to the peer and pass it to `ACCEPT-SEC`:
 
 ```lisp
-  (cl-gss:accept-sec buffer)
+(cl-gss:accept-sec buffer)
 ```
 
 The call will return 5 values:
@@ -69,9 +69,9 @@ form but can be converted to a string using the function
 `NAME-TO-STRING`. This name can then be used for authorisation checks.
 
 ```lisp
-  (let ((user-name (cl-gss:name-to-string name)))
-    (unless (equal user-name "some-name")
-      (error "No permission to access service")))
+(let ((user-name (cl-gss:name-to-string name)))
+  (unless (equal user-name "some-name")
+    (error "No permission to access service")))
 ```
 
 Once `INIT-SEC` and `ACCEPT-SEC` have returned `NIL` as its first
