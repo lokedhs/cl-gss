@@ -26,7 +26,7 @@
                                                         password-buffer                ; password
                                                         (or time-req gss-c-indefinite) ; time_req
                                                         *gss-c-no-oid*                 ; desired_mechs
-                                                        (usage->foreign usage)       ; cred_usage
+                                                        (usage->foreign usage)         ; cred_usage
                                                         output-cred-handle             ; output_cred_handle
                                                         (cffi:null-pointer)            ; actual_mechs
                                                         time-rec                       ; time_rec
