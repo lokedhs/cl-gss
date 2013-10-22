@@ -23,4 +23,5 @@
                                      (cffi-grovel:grovel-file "gss-mech-krb5-grovel")
                                      (:file "functions")
                                      (:file "functions-mech-krb5")
-                                     (:file "cl-gss")))))
+                                     (:file "cl-gss")
+                                     (:file "cl-gss-ext")))))

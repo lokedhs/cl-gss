@@ -124,3 +124,7 @@
   (output-cred-handle gss-cred-id-t)
   (actual-mechs (:pointer (:pointer (:struct gss-oid-set-desc))))
   (time-rec (:pointer om-uint32)))
+
+(cffi:defcfun ("gss_release_cred" gss-release-cred) om-uint32
+  (minor-status (:pointer om-uint32))
+  (cred-handle (:pointer gss-cred-id-t)))

@@ -62,6 +62,17 @@ actual registration of the object is handled by the subclass."))
                                         (setf (cffi:mem-ref h 'gss-ctx-id-t) ptr)
                                         (gss-call m (gss-delete-sec-context m h output)))))))
 
+(defclass cred (gss-memory-mixin)
+  ()
+  (:documentation "Wrapper class for instances of gss-cred-t"))
+
+(defmethod initialize-instance :after ((obj cred) &key &allow-other-keys)
+  (let ((ptr (gss-memory-mixin-ptr obj)))
+    (trivial-garbage:finalize obj #'(lambda ()
+                                      (cffi:with-foreign-objects ((n 'gss-cred-id-t))
+                                        (setf (cffi:mem-ref n 'gss-cred-id-t) ptr)
+                                        (gss-call m (gss-release-cred m n)))))))
+
 (define-condition gss-error (error)
   ((major-errors :type list
                  :initarg :major-errors
