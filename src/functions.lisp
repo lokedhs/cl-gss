@@ -121,9 +121,17 @@
   (time-req om-uint32)
   (desired-mechs (:pointer (:struct gss-oid-set-desc)))
   (cred-usage gss-cred-usage-t)
-  (output-cred-handle gss-cred-id-t)
+  (output-cred-handle (:pointer gss-cred-id-t))
   (actual-mechs (:pointer (:pointer (:struct gss-oid-set-desc))))
   (time-rec (:pointer om-uint32)))
+
+(cffi:defcfun ("gss_inquire_cred" gss-inquire-cred) om-uint32
+  (minor-status (:pointer om-uint32))
+  (cred-handle gss-cred-id-t)
+  (name (:pointer gss-name-t))
+  (lifetime (:pointer om-uint32))
+  (cred-usage (:pointer gss-cred-usage-t))
+  (mechs (:pointer (:pointer (:struct gss-oid-set-desc)))))
 
 (cffi:defcfun ("gss_release_cred" gss-release-cred) om-uint32
   (minor-status (:pointer om-uint32))
