@@ -76,15 +76,18 @@
 (cstruct gss-buffer-desc "gss_buffer_desc"
          (length "length" :type size-t)
          (value "value" :type :pointer))
-;(ctype gss-buffer-t (:pointer gss-buffer-desc))
 
 (cstruct gss-oid-desc "gss_OID_desc"
          (length "length" :type om-uint32)
          (elements "elements" :type :pointer))
-;(ctype gss-oid (:pointer gss-oid-desc))
+
+(cstruct gss-oid-set-desc "gss_OID_set_desc"
+         (count "count" :type size-t)
+         (elements "elements" :type (:pointer gss-oid-desc)))
 
 (ctype gss-name-t "gss_name_t")
 (ctype gss-cred-id-t "gss_cred_id_t")
 (ctype gss-ctx-id-t "gss_ctx_id_t")
 (ctype gss-channel-bindings-t "gss_channel_bindings_t")
 (ctype gss-qop-t "gss_qop_t")
+(ctype gss-cred-usage-t "gss_cred_usage_t")
