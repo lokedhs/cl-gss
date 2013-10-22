@@ -24,7 +24,7 @@
         (mem-sym (gensym "MEM-"))
         (buffer-sym (gensym "EXTERNAL-BUFFER-")))
     `(let ((,array-copy ,buffer))
-       (with-foreign-buffer-from-byte-array (,mem-sym buffer)
+       (with-foreign-buffer-from-byte-array (,mem-sym ,array-copy)
          (cffi:with-foreign-objects ((,buffer-sym '(:struct gss-buffer-desc)))
            (setf (buffer-desc-length ,buffer-sym) (length ,array-copy))
            (setf (buffer-desc-value ,buffer-sym) ,mem-sym)
@@ -158,18 +158,28 @@ actual registration of the object is handled by the subclass."))
                                                     (list :array :unsigned-char
                                                           (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32))))))
 
-(defun make-name (name-string)
+(defun make-name (name-string &key (type :hostbased-service))
   "Create a new name object representing the given name.
 This function implements the functionality of the GSSAPI
 function `gss_import_name'."
   (check-type name-string string)
-  (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) name-string :null-terminated-p nil)
-    (cffi:with-foreign-objects ((buf '(:struct gss-buffer-desc))
-                                (output-name 'gss-name-t))
-      (setf (buffer-desc-length buf) foreign-name-string-length)
-      (setf (buffer-desc-value buf) foreign-name-string)
-      (gss-call minor (gss-import-name minor buf *gss-c-nt-hostbased-service* output-name))
-      (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t)))))
+  (let ((name-type (ecase type
+                    (:user-name *gss-c-nt-user-name*)
+                    (:machine-uid-name *gss-c-nt-machine-uid-name*)
+                    (:string-uid-name *gss-c-nt-string-uid-name*)
+                    (:hostbased-service *gss-c-nt-hostbased-service*))))
+    (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) name-string :null-terminated-p nil)
+      (cffi:with-foreign-objects ((buf '(:struct gss-buffer-desc))
+                                  (output-name 'gss-name-t))
+        (setf (buffer-desc-length buf) foreign-name-string-length)
+        (setf (buffer-desc-value buf) foreign-name-string)
+        (gss-call minor (gss-import-name minor buf name-type output-name))
+        (make-instance 'name :ptr (cffi:mem-ref output-name 'gss-name-t))))))
+
+(defun parse-identifier-to-name (obj)
+  (etypecase obj
+    (name obj)
+    (string (make-name obj))))
 
 (defun name-to-string (name)
   "Return the string representation of NAME."
@@ -249,7 +259,7 @@ This function returns the following values:
   (check-type context (or null context))
   (check-type input-token (or null vector))
 
-  (let ((name (if (stringp target) (make-name target) target))
+  (let ((name (parse-identifier-to-name target))
         input-token-buffer)
     (cffi:with-foreign-objects ((input-token-content '(:struct gss-buffer-desc))
                                 (context-handle 'gss-ctx-id-t)

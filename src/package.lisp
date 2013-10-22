@@ -11,7 +11,8 @@
            #:accept-sec
            #:wrap
            #:unwrap
-           #:krb5-register-acceptor-identity))
+           #:krb5-register-acceptor-identity
+           #:acquire-cred-password))
 
 (in-package :cl-gss)
 

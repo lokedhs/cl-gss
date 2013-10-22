@@ -14,7 +14,8 @@
   :description "Common Lisp interface to GSSAPI"
   :depends-on (:cffi
                :cffi-grovel
-               :trivial-garbage)
+               :trivial-garbage
+               :trivial-utf-8)
   :components ((:module src
                         :serial t
                         :components ((:file "package")

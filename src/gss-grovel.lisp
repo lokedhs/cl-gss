@@ -1,6 +1,7 @@
 (in-package :cl-gss)
 
 (include "gssapi/gssapi.h")
+(include "gssapi/gssapi_ext.h")
 
 (constant (gss-c-deleg-flag "GSS_C_DELEG_FLAG"))
 (constant (gss-c-mutual-flag "GSS_C_MUTUAL_FLAG"))
@@ -86,7 +87,6 @@
          (elements "elements" :type (:pointer gss-oid-desc)))
 
 (ctype gss-name-t "gss_name_t")
-(ctype gss-cred-id-t "gss_cred_id_t")
 (ctype gss-ctx-id-t "gss_ctx_id_t")
 (ctype gss-channel-bindings-t "gss_channel_bindings_t")
 (ctype gss-qop-t "gss_qop_t")

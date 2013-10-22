@@ -10,7 +10,11 @@
 
 (cffi:defctype gss-oid :pointer)
 (cffi:defctype gss-buffer-t :pointer)
+(cffi:defctype gss-cred-id-t :pointer)
 
+(cffi:defcvar ("GSS_C_NT_USER_NAME" *gss-c-nt-user-name* :read-only t) gss-oid)
+(cffi:defcvar ("GSS_C_NT_MACHINE_UID_NAME" *gss-c-nt-machine-uid-name* :read-only t) gss-oid)
+(cffi:defcvar ("GSS_C_NT_STRING_UID_NAME" *gss-c-nt-string-uid-name* :read-only t) gss-oid)
 (cffi:defcvar ("GSS_C_NT_HOSTBASED_SERVICE" *gss-c-nt-hostbased-service* :read-only t) gss-oid)
 
 (defparameter *gss-c-no-oid* (cffi:null-pointer))
@@ -112,7 +116,7 @@
 
 (cffi:defcfun ("gss_acquire_cred_with_password" gss-acquire-cred-with-password) om-uint32
   (minor-status (:pointer om-uint32))
-  (desired-name (:pointer gss-name-t))
+  (desired-name gss-name-t)
   (password (:pointer (:struct gss-buffer-desc)))
   (time-req om-uint32)
   (desired-mechs (:pointer (:struct gss-oid-set-desc)))
