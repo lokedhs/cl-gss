@@ -84,7 +84,7 @@
 
 (cstruct gss-oid-set-desc "gss_OID_set_desc"
          (count "count" :type size-t)
-         (elements "elements" :type (:pointer gss-oid-desc)))
+         (elements "elements" :type (:pointer (:struct gss-oid-desc))))
 
 (ctype gss-name-t "gss_name_t")
 (ctype gss-ctx-id-t "gss_ctx_id_t")

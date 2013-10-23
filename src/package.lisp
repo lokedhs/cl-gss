@@ -16,7 +16,8 @@
            #:inquire-cred
            #:name
            #:context
-           #:cred))
+           #:cred
+           #:mech-list))
 
 (in-package :cl-gss)
 

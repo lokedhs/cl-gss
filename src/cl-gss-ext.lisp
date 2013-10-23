@@ -47,3 +47,21 @@
     (values (make-instance 'name :ptr (cffi:mem-ref name 'gss-name-t))
             (cffi:mem-ref lifetime 'om-uint32)
             (parse-usage-from-foreign (cffi:mem-ref usage 'gss-cred-usage-t)))))
+
+(defun make-mech (mech-ref)
+  (let ((length (cffi:foreign-slot-value mech-ref '(:struct gss-oid-desc) 'length))
+        (v (cffi:foreign-slot-value mech-ref '(:struct gss-oid-desc) 'elements)))
+    (convert-to-bytes (cffi:convert-from-foreign v (list :array :unsigned-char length)))))
+
+(defun mech-list ()
+  (cffi:with-foreign-objects ((mech-set-return '(:pointer (:struct gss-oid-set-desc))))
+    (gss-call minor (gss-indicate-mechs minor mech-set-return))
+    (unwind-protect
+         (let* ((mech-set (cffi:mem-ref mech-set-return '(:pointer (:struct gss-oid-set-desc))))
+                (num-mechs (cffi:foreign-slot-value mech-set '(:struct gss-oid-set-desc) 'count))
+                (elements-ref (cffi:foreign-slot-value mech-set '(:struct gss-oid-set-desc) 'elements)))
+           (loop
+              for i from 0 below num-mechs
+              collect (make-mech (cffi:mem-aptr elements-ref '(:struct gss-oid-desc) i))))
+      ;; Release the returned mech set
+      (gss-call m (gss-release-oid-set m mech-set-return)))))

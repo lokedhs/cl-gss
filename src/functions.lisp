@@ -140,3 +140,7 @@
 (cffi:defcfun ("gss_indicate_mechs" gss-indicate-mechs) om-uint32
   (minor-status (:pointer om-uint32))
   (mech-set (:pointer (:pointer (:struct gss-oid-set-desc)))))
+
+(cffi:defcfun ("gss_release_oid_set" gss-release-oid-set) om-uint32
+  (minor-status (:pointer om-uint32))
+  (oid-set (:pointer (:pointer (:struct gss-oid-set-desc)))))
