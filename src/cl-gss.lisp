@@ -341,9 +341,21 @@ Return values are:
                               (time-rec 'om-uint32))
     (setf (cffi:mem-ref context-handle 'gss-ctx-id-t) (get-or-allocate-context context))
     (with-buffer-desc (input-token-buffer buffer)
+      (hunchentoot:log-message* :info "~s" (list 
+                                                 context-handle ;context-handle
+                                                 gss-c-no-credential ;acceptor-cred-handle
+                                                 input-token-buffer ;input buffer
+                                                 gss-c-no-channel-bindings ;chan bindings
+                                                 src-name ;src name
+                                                 (cffi:null-pointer) ;mech type
+                                                 output-token ;output token
+                                                 ret-flags ;ret flags
+                                                 time-rec  ;time rec
+                                                 (cffi-sys:null-pointer) ;delegated cred handle
+                                                 ))
       (let ((result (gss-call m (gss-accept-sec-context m ;minor
                                                         context-handle ;context-handle
-                                                        gss-c-no-credential ;acceptor-cred-handle
+                                                        (cffi:null-pointer) ;acceptor-cred-handle
                                                         input-token-buffer ;input buffer
                                                         gss-c-no-channel-bindings ;chan bindings
                                                         src-name ;src name
