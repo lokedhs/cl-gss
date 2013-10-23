@@ -252,7 +252,7 @@ the functionality of the GSSAPI function `gss_compare_name'."
 ;;;
 ;;;  Implementation of gss_init_sec_context
 ;;;
-(defun init-sec (target &key flags (time-req 0) context input-token)
+(defun init-sec (target &key flags (time-req 0) context input-token cred)
   "Initialise a GSS security context. This function implements the functionality of
 the GSSAPI function `gss_init_sec_context'.
 
@@ -269,8 +269,10 @@ This function returns the following values:
   (check-type time-req (integer 0))
   (check-type context (or null context))
   (check-type input-token (or null vector))
+  (check-type cred (or null cred))
 
   (let ((name (parse-identifier-to-name target))
+        (cred-ptr (if cred (gss-memory-mixin-ptr cred) (cffi-sys:null-pointer)))
         input-token-buffer)
     (cffi:with-foreign-objects ((input-token-content '(:struct gss-buffer-desc))
                                 (context-handle 'gss-ctx-id-t)
@@ -291,7 +293,7 @@ This function returns the following values:
             (setf (buffer-desc-value input-token-content) (cffi:null-pointer))))
       (unwind-protect
            (let ((result (gss-call m (gss-init-sec-context m
-                                                           gss-c-no-credential 
+                                                           cred-ptr
                                                            context-handle
                                                            (gss-memory-mixin-ptr name)
                                                            *gss-c-no-oid*
@@ -317,7 +319,7 @@ This function returns the following values:
 ;;;
 ;;;  Implements the functionality of gss_accept_sec_context
 ;;;
-(defun accept-sec (buffer &key context)
+(defun accept-sec (buffer &key context cred)
   "Accept a security context from a remote client. This function implements the
 functionality of the GSSAPI function `gss_accept_sec_context'.
 
@@ -334,6 +336,7 @@ Return values are:
 
   (check-type buffer vector)
   (check-type context (or null context))
+  (check-type cred (or null cred))
   (cffi:with-foreign-objects ((context-handle 'gss-ctx-id-t)
                               (src-name 'gss-name-t)
                               (output-token '(:struct gss-buffer-desc))
@@ -341,9 +344,10 @@ Return values are:
                               (time-rec 'om-uint32))
     (setf (cffi:mem-ref context-handle 'gss-ctx-id-t) (get-or-allocate-context context))
     (with-buffer-desc (input-token-buffer buffer)
-      (let ((result (gss-call m (gss-accept-sec-context m ;minor
+      (let* ((cred-ptr (if cred (gss-memory-mixin-ptr cred) (cffi:null-pointer)))
+             (result (gss-call m (gss-accept-sec-context m ;minor
                                                         context-handle ;context-handle
-                                                        (cffi:null-pointer) ;acceptor-cred-handle
+                                                        cred-ptr ;acceptor-cred-handle
                                                         input-token-buffer ;input buffer
                                                         gss-c-no-channel-bindings ;chan bindings
                                                         src-name ;src name
