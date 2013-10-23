@@ -73,6 +73,8 @@ MECHANISMS - A list of mech OID values describing the mechanisms that are
       (gss-call m (gss-release-oid-set m mech-list)))))
 
 (defun mech-list ()
+  "Return a list of all suported mechnisms. Each entry is an OID describing
+each mechanism."
   (cffi:with-foreign-objects ((mech-set-return '(:pointer (:struct gss-oid-set-desc))))
     (gss-call minor (gss-indicate-mechs minor mech-set-return))
     (unwind-protect
