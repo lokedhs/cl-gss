@@ -136,3 +136,7 @@
 (cffi:defcfun ("gss_release_cred" gss-release-cred) om-uint32
   (minor-status (:pointer om-uint32))
   (cred-handle (:pointer gss-cred-id-t)))
+
+(cffi:defcfun ("gss_indicate_mechs" gss-indicate-mechs) om-uint32
+  (minor-status (:pointer om-uint32))
+  (mech-set (:pointer (:pointer (:struct gss-oid-set-desc)))))
