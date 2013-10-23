@@ -104,8 +104,8 @@ actual registration of the object is handled by the subclass."))
   (if (cffi:null-pointer-p token)
       nil
       (convert-to-bytes (cffi:convert-from-foreign (buffer-desc-value token)
-                                                    (list :array :unsigned-char
-                                                          (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32))))))
+                                                   (list :array :unsigned-char
+                                                         (cffi:convert-from-foreign (buffer-desc-length token) 'om-uint32))))))
 
 (defun make-name (name-string &key (type :hostbased-service))
   "Create a new name object representing the given name.
