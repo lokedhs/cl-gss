@@ -332,7 +332,9 @@ Return values are:
            no need to send more messages
   FLAGS - a list of flags that describe various properties of the session.
           possible flags: :DELEG, :MUTUAL, :REPLAY, :SEQUENCE, :CONF, :INTEG, :ANON
-  TIME-REC - The length of time that the context will be valid."
+  TIME-REC - The length of time that the context will be valid.
+  DELEGATED-CRED-HANDLE - If the FLAGS value contains :DELEG, this value contains
+                          the delegated credentials, an instance of the type CRED"
 
   (check-type buffer vector)
   (check-type context (or null context))
@@ -341,7 +343,8 @@ Return values are:
                               (src-name 'gss-name-t)
                               (output-token '(:struct gss-buffer-desc))
                               (ret-flags 'om-uint32)
-                              (time-rec 'om-uint32))
+                              (time-rec 'om-uint32)
+                              (output-cred-handle :pointer))
     (setf (cffi:mem-ref context-handle 'gss-ctx-id-t) (get-or-allocate-context context))
     (with-buffer-desc (input-token-buffer buffer)
       (let* ((cred-ptr (if cred (gss-memory-mixin-ptr cred) (cffi:null-pointer)))
@@ -355,15 +358,19 @@ Return values are:
                                                          output-token ;output token
                                                          ret-flags ;ret flags
                                                          time-rec ;time rec
-                                                         (cffi-sys:null-pointer) ;delegated cred handle
+                                                         output-cred-handle ;delegated cred handle
                                                          ))))
         (unwind-protect
-             (values (continue-needed-p result)
-                     (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
-                     (make-instance 'name :ptr (cffi:mem-ref src-name 'gss-name-t))
-                     (token->array output-token)
-                     (make-flags-list (cffi:mem-ref ret-flags 'om-uint32))
-                     (cffi:mem-ref time-rec 'om-uint32))
+             (let ((flag-list (make-flags-list (cffi:mem-ref ret-flags 'om-uint32))))
+               (values (continue-needed-p result)
+                       (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
+                       (make-instance 'name :ptr (cffi:mem-ref src-name 'gss-name-t))
+                       (token->array output-token)
+                       flag-list
+                       (cffi:mem-ref time-rec 'om-uint32)
+                       (if (find :deleg flag-list)
+                           (make-instance 'cred :ptr output-cred-handle)
+                           nil)))
           (gss-call m (gss-release-buffer m output-token)))))))
 
 ;;;
