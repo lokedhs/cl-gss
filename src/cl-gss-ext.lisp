@@ -34,34 +34,48 @@
         (values (make-instance 'cred :ptr (cffi:mem-ref output-cred-handle 'gss-cred-id-t))
                 (cffi:mem-ref time-rec 'om-uint32))))))
 
-(defun inquire-cred (cred)
-  (cffi:with-foreign-objects ((name 'gss-name-t)
-                              (lifetime 'om-uint32)
-                              (usage 'gss-cred-usage-t))
-    (gss-call minor (gss-inquire-cred minor
-                                      (gss-memory-mixin-ptr cred)
-                                      name
-                                      lifetime
-                                      usage
-                                      (cffi-sys:null-pointer)))
-    (values (make-instance 'name :ptr (cffi:mem-ref name 'gss-name-t))
-            (cffi:mem-ref lifetime 'om-uint32)
-            (parse-usage-from-foreign (cffi:mem-ref usage 'gss-cred-usage-t)))))
-
 (defun make-mech (mech-ref)
   (let ((length (cffi:foreign-slot-value mech-ref '(:struct gss-oid-desc) 'length))
         (v (cffi:foreign-slot-value mech-ref '(:struct gss-oid-desc) 'elements)))
     (convert-to-bytes (cffi:convert-from-foreign v (list :array :unsigned-char length)))))
 
+(defun generate-mech-list (mech-set)
+  (let* ((mech-set (cffi:mem-ref mech-set '(:pointer (:struct gss-oid-set-desc))))
+         (num-mechs (cffi:foreign-slot-value mech-set '(:struct gss-oid-set-desc) 'count))
+         (elements-ref (cffi:foreign-slot-value mech-set '(:struct gss-oid-set-desc) 'elements)))
+    (loop
+       for i from 0 below num-mechs
+       collect (make-mech (cffi:mem-aptr elements-ref '(:struct gss-oid-desc) i)))))
+
+(defun inquire-cred (cred)
+  "Inquire information about a credential. This function returns four values:
+NAME - The name of the identity that is asserted by the credential
+TIME - The number of seconds that the credential remains valid
+USAGE - A value indicating hwo the credential is used, one of
+        :INITIATE, :ACCEPT, :BOTH
+MECHANISMS - A list of mech OID values describing the mechanisms that are
+             supported."
+  (cffi:with-foreign-objects ((name 'gss-name-t)
+                              (lifetime 'om-uint32)
+                              (usage 'gss-cred-usage-t)
+                              (mech-list '(:pointer (:struct gss-oid-desc))))
+    (gss-call minor (gss-inquire-cred minor
+                                      (gss-memory-mixin-ptr cred)
+                                      name
+                                      lifetime
+                                      usage
+                                      mech-list))
+    (unwind-protect
+         (values (make-instance 'name :ptr (cffi:mem-ref name 'gss-name-t))
+                 (cffi:mem-ref lifetime 'om-uint32)
+                 (parse-usage-from-foreign (cffi:mem-ref usage 'gss-cred-usage-t))
+                 (generate-mech-list mech-list))
+      (gss-call m (gss-release-oid-set m mech-list)))))
+
 (defun mech-list ()
   (cffi:with-foreign-objects ((mech-set-return '(:pointer (:struct gss-oid-set-desc))))
     (gss-call minor (gss-indicate-mechs minor mech-set-return))
     (unwind-protect
-         (let* ((mech-set (cffi:mem-ref mech-set-return '(:pointer (:struct gss-oid-set-desc))))
-                (num-mechs (cffi:foreign-slot-value mech-set '(:struct gss-oid-set-desc) 'count))
-                (elements-ref (cffi:foreign-slot-value mech-set '(:struct gss-oid-set-desc) 'elements)))
-           (loop
-              for i from 0 below num-mechs
-              collect (make-mech (cffi:mem-aptr elements-ref '(:struct gss-oid-desc) i))))
+         (generate-mech-list mech-set-return)
       ;; Release the returned mech set
       (gss-call m (gss-release-oid-set m mech-set-return)))))
