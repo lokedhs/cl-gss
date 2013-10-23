@@ -13,7 +13,10 @@
            #:unwrap
            #:krb5-register-acceptor-identity
            #:acquire-cred-password
-           #:inquire-cred))
+           #:inquire-cred
+           #:name
+           #:context
+           #:cred))
 
 (in-package :cl-gss)
 
