@@ -346,17 +346,17 @@ Return values are:
     (with-buffer-desc (input-token-buffer buffer)
       (let* ((cred-ptr (if cred (gss-memory-mixin-ptr cred) (cffi:null-pointer)))
              (result (gss-call m (gss-accept-sec-context m ;minor
-                                                        context-handle ;context-handle
-                                                        cred-ptr ;acceptor-cred-handle
-                                                        input-token-buffer ;input buffer
-                                                        gss-c-no-channel-bindings ;chan bindings
-                                                        src-name ;src name
-                                                        (cffi:null-pointer) ;mech type
-                                                        output-token ;output token
-                                                        ret-flags ;ret flags
-                                                        time-rec ;time rec
-                                                        (cffi-sys:null-pointer) ;delegated cred handle
-                                                        ))))
+                                                         context-handle ;context-handle
+                                                         cred-ptr ;acceptor-cred-handle
+                                                         input-token-buffer ;input buffer
+                                                         gss-c-no-channel-bindings ;chan bindings
+                                                         src-name ;src name
+                                                         (cffi:null-pointer) ;mech type
+                                                         output-token ;output token
+                                                         ret-flags ;ret flags
+                                                         time-rec ;time rec
+                                                         (cffi-sys:null-pointer) ;delegated cred handle
+                                                         ))))
         (unwind-protect
              (values (continue-needed-p result)
                      (or context (make-instance 'context :ptr (cffi:mem-ref context-handle 'gss-ctx-id-t)))
