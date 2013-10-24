@@ -16,6 +16,22 @@
         ((= usage gss-c-both)
          :both)))
 
+(defun acquire-cred (desired-name &key time-req (usage :initiate))
+  (let ((name (parse-identifier-to-name desired-name)))
+    (cffi:with-foreign-objects ((output-cred-handle :pointer)
+                                (time-rec 'om-uint32))
+      (gss-call minor (gss-acquire-cred minor
+                                        (gss-memory-mixin-ptr name) ; desired_name
+                                        (or time-req gss-c-indefinite) ; time_req
+                                        *gss-c-no-oid* ; desired_mechs
+                                        (conv-usage-to-foreign usage) ; cred_usage
+                                        output-cred-handle ; output_cred_handle
+                                        (cffi:null-pointer) ; actual_mechs
+                                        time-rec ; time_rec
+                                        ))
+      (values (make-instance 'cred :ptr (cffi:mem-ref output-cred-handle 'gss-cred-id-t))
+              (cffi:mem-ref time-rec 'om-uint32)))))
+
 (defun acquire-cred-password (desired-name password &key time-req (usage :initiate))
   (let ((name (parse-identifier-to-name desired-name)))
     (cffi:with-foreign-objects ((output-cred-handle :pointer)
@@ -81,3 +97,25 @@ each mechanism."
          (generate-mech-list mech-set-return)
       ;; Release the returned mech set
       (gss-call m (gss-release-oid-set m mech-set-return)))))
+
+(defmacro with-oid-buffer ((sym oid) &body body)
+  (let ((oid-copy (gensym "OID-"))
+        (array-sym (gensym "ARRAY-"))
+        (oid-struct (gensym "OID-VALUE-")))
+    `(let ((,oid-copy ,oid))
+       (cffi:with-foreign-objects ((,oid-struct '(:struct gss-oid-desc)))
+         (with-foreign-buffer-from-byte-array (,array-sym ,oid-copy)
+           (setf (cffi:foreign-slot-value ,oid-struct '(:struct gss-oid-desc) 'length) (length oid))
+           (setf (cffi:foreign-slot-value ,oid-struct '(:struct gss-oid-desc) 'elements) ,array-sym)
+           (let ((,sym ,oid-struct))
+             ,@body))))))
+
+(defun oid-to-string (oid)
+  (check-type oid vector)
+  (with-oid-buffer (oid-ref oid)
+    (cffi:with-foreign-objects ((result '(:struct gss-buffer-desc)))
+      (gss-call minor (gss-oid-to-str minor oid-ref result))
+      (unwind-protect
+           (cffi:foreign-string-to-lisp (buffer-desc-value result)
+                                        :count (buffer-desc-length result))
+        (gss-call m (gss-release-buffer m result))))))

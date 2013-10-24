@@ -114,6 +114,16 @@
 (defmacro buffer-desc-value (buf)
   `(cffi:foreign-slot-value ,buf '(:struct gss-buffer-desc) 'value))
 
+(cffi:defcfun ("gss_acquire_cred" gss-acquire-cred) om-uint32
+  (minor-status (:pointer om-uint32))
+  (desired-name gss-name-t)
+  (time-req om-uint32)
+  (desired-mechs (:pointer (:struct gss-oid-set-desc)))
+  (cred-usage gss-cred-usage-t)
+  (output-cred-handle (:pointer gss-cred-id-t))
+  (actual-mechs (:pointer (:pointer (:struct gss-oid-set-desc))))
+  (time-rec (:pointer om-uint32)))
+
 (cffi:defcfun ("gss_acquire_cred_with_password" gss-acquire-cred-with-password) om-uint32
   (minor-status (:pointer om-uint32))
   (desired-name gss-name-t)
@@ -144,3 +154,8 @@
 (cffi:defcfun ("gss_release_oid_set" gss-release-oid-set) om-uint32
   (minor-status (:pointer om-uint32))
   (oid-set (:pointer (:pointer (:struct gss-oid-set-desc)))))
+
+(cffi:defcfun ("gss_oid_to_str" gss-oid-to-str) om-uint32
+  (minor-status (:pointer om-uint32))
+  (oid (:pointer (:struct gss-oid-desc)))
+  (output-string (:pointer (:struct gss-buffer-desc))))
