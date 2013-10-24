@@ -8,7 +8,7 @@
 
 (cffi:use-foreign-library libgssapi)
 
-(cffi:defctype gss-oid :pointer)
+(cffi:defctype gss-oid (:pointer (:struct gss-oid-desc)))
 (cffi:defctype gss-buffer-t :pointer)
 (cffi:defctype gss-cred-id-t :pointer)
 

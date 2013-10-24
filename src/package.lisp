@@ -18,7 +18,8 @@
            #:context
            #:cred
            #:mech-list 
-           #:acquire-cred))
+           #:acquire-cred
+           #:oid-to-string))
 
 (in-package :cl-gss)
 

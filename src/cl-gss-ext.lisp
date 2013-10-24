@@ -116,6 +116,17 @@ each mechanism."
     (cffi:with-foreign-objects ((result '(:struct gss-buffer-desc)))
       (gss-call minor (gss-oid-to-str minor oid-ref result))
       (unwind-protect
-           (cffi:foreign-string-to-lisp (buffer-desc-value result)
-                                        :count (buffer-desc-length result))
+           ;; The value returned contains the terminating 0 byte
+           ;; which is somewhat surprising, since other functions
+           ;; returning strings do not do this. Since there is very
+           ;; little documentation available to explain exactly
+           ;; how it's supposed to work, we'll simply strip the
+           ;; trailing 0 if any can be found.
+           (let ((length (buffer-desc-length result)))
+             (loop
+                while (and (plusp length)
+                           (= (cffi:mem-aref (buffer-desc-value result) :unsigned-char (1- length)) 0))
+                do (decf length))
+             (cffi:foreign-string-to-lisp (buffer-desc-value result)
+                                          :count length))
         (gss-call m (gss-release-buffer m result))))))
