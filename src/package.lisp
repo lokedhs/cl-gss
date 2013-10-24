@@ -19,7 +19,8 @@
            #:cred
            #:mech-list 
            #:acquire-cred
-           #:oid-to-string))
+           #:oid-to-string
+           #:string-to-oid))
 
 (in-package :cl-gss)
 

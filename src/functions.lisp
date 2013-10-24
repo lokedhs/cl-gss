@@ -155,7 +155,16 @@
   (minor-status (:pointer om-uint32))
   (oid-set (:pointer (:pointer (:struct gss-oid-set-desc)))))
 
+(cffi:defcfun ("gss_release_oid" gss-release-oid) om-uint32
+  (minor-status (:pointer om-uint32))
+  (oid-set (:pointer (:pointer (:struct gss-oid-desc)))))
+
 (cffi:defcfun ("gss_oid_to_str" gss-oid-to-str) om-uint32
   (minor-status (:pointer om-uint32))
   (oid (:pointer (:struct gss-oid-desc)))
   (output-string (:pointer (:struct gss-buffer-desc))))
+
+(cffi:defcfun ("gss_str_to_oid" gss-str-to-oid) om-uint32
+  (minor-status (:pointer om-uint32))
+  (string (:pointer (:struct gss-buffer-desc)))
+  (result-buffer (:pointer (:pointer (:struct gss-oid-desc)))))

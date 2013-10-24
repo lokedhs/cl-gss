@@ -130,3 +130,15 @@ each mechanism."
              (cffi:foreign-string-to-lisp (buffer-desc-value result)
                                           :count length))
         (gss-call m (gss-release-buffer m result))))))
+
+(defun string-to-oid (string)
+  (check-type string string)
+  (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) string)
+    (cffi:with-foreign-objects ((buf '(:struct gss-buffer-desc))
+                                (result '(:pointer (:pointer (:struct gss-oid-desc)))))
+      (setf (buffer-desc-length buf) foreign-name-string-length)
+      (setf (buffer-desc-value buf) foreign-name-string)
+      (gss-call minor (gss-str-to-oid minor buf result))
+      (unwind-protect
+           (make-mech (cffi:mem-ref result '(:pointer (:struct gss-oid-desc))))
+        (gss-call m (gss-release-oid m result))))))
