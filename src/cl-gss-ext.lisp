@@ -67,7 +67,7 @@
   "Inquire information about a credential. This function returns four values:
 NAME - The name of the identity that is asserted by the credential
 TIME - The number of seconds that the credential remains valid
-USAGE - A value indicating hwo the credential is used, one of
+USAGE - A value indicating how the credential is used, one of
         :INITIATE, :ACCEPT, :BOTH
 MECHANISMS - A list of mech OID values describing the mechanisms that are
              supported."
