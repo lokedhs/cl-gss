@@ -111,7 +111,7 @@ actual registration of the object is handled by the subclass."))
   "Create a new name object representing the given name.
 The TYPE parameter indicates the requested usage type, its
 value is one of :USER-NAME, :MACHINE-UID-NAME, :STRING-UID-NAME,
-:HOSTBASE-SERVICE.
+:HOSTBASED-SERVICE.
 This function implements the functionality of the GSSAPI
 function `gss_import_name'."
   (check-type name-string string)
