@@ -190,6 +190,12 @@ the functionality of the GSSAPI function `gss_compare_name'."
       (gss-memory-mixin-ptr context)
       gss-c-no-context))
 
+(defun context-time (context)
+  (check-type context context)
+  (cffi:with-foreign-objects ((time-rec 'om-uint32))
+    (gss-call minor (gss-context-time minor (gss-memory-mixin-ptr context) time-rec))
+    (cffi:mem-ref time-rec 'om-uint32)))
+
 ;;;
 ;;;  Implementation of gss_init_sec_context
 ;;;

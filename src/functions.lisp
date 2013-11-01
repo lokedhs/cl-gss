@@ -50,6 +50,11 @@
   (message-context (:pointer om-uint32))
   (status-string (:pointer (:struct gss-buffer-desc))))
 
+(cffi:defcfun ("gss_context_time" gss-context-time) om-uint32
+  (minor-status (:pointer om-uint32))
+  (context-handle gss-ctx-id-t)
+  (time-rec (:pointer om-uint32)))
+
 (cffi:defcfun ("gss_release_buffer" gss-release-buffer) om-uint32
   (minor-status (:pointer om-uint32))
   (buffer (:pointer (:struct gss-buffer-desc))))

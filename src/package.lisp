@@ -20,7 +20,8 @@
            #:mech-list 
            #:acquire-cred
            #:oid-to-string
-           #:string-to-oid))
+           #:string-to-oid
+           #:context-time))
 
 (in-package :cl-gss)
 
