@@ -14,7 +14,9 @@
         ((= usage gss-c-accept)
          :accept)
         ((= usage gss-c-both)
-         :both)))
+         :both)
+        (t
+         (error "Unknown usage type"))))
 
 (defun acquire-cred (desired-name &key time-req (usage :initiate))
   (let ((name (parse-identifier-to-name desired-name)))
