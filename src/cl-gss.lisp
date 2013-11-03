@@ -20,6 +20,8 @@
          (cffi:foreign-free ,s)))))
 
 (defmacro with-buffer-desc ((sym buffer) &body body)
+  "Convert BUFFER to a native byte array, and bind it to SYM and
+evaluate the body as an implicit progn."
   (let ((array-copy (gensym "ARRAY-"))
         (mem-sym (gensym "MEM-"))
         (buffer-sym (gensym "EXTERNAL-BUFFER-")))
