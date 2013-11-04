@@ -1,7 +1,7 @@
 (in-package :cl-gss)
 
 (include "gssapi/gssapi.h")
-(include "gssapi/gssapi_ext.h")
+#-darwin (include "gssapi/gssapi_ext.h")
 
 (constant (gss-c-deleg-flag "GSS_C_DELEG_FLAG"))
 (constant (gss-c-mutual-flag "GSS_C_MUTUAL_FLAG"))
