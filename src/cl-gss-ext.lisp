@@ -3,12 +3,14 @@
 (declaim #.*compile-decl*)
 
 (defun conv-usage-to-foreign (usage)
+  "Given a usage keyword, return the corresponding native value."
   (ecase usage
     (:initiate gss-c-initiate)
     (:accept gss-c-accept)
     (:both gss-c-both)))
 
 (defun parse-usage-from-foreign (usage)
+  "Given a native usage value, return the corresponding keyword."
   (cond ((= usage gss-c-initiate)
          :initiate)
         ((= usage gss-c-accept)
@@ -19,6 +21,8 @@
          (error "Unknown usage type"))))
 
 (defun acquire-cred (desired-name &key time-req (usage :initiate))
+  "Acquire a credential handle. This function corresponds to the
+GSSAPI function `gss_acquire_cred'."
   (let ((name (parse-identifier-to-name desired-name)))
     (cffi:with-foreign-objects ((output-cred-handle :pointer)
                                 (time-rec 'om-uint32))
@@ -35,6 +39,15 @@
               (cffi:mem-ref time-rec 'om-uint32)))))
 
 (defun acquire-cred-password (desired-name password &key time-req (usage :initiate))
+  "Acquire a credential handle. DESIRED-NAME is the name of the
+principal and is either a string (in which it's interpreted as a
+service name) or an instance of NAME (created using MAKE-NAME).
+PASSWORD is the password that should be used for authenticating the
+principal. This function corresponds to the GSSAPI function
+`gss_acquire_cred_with_password'.
+
+Note that this is specified as an extension function in GSSAPI and as
+such may not be available on all systems."
   (let ((name (parse-identifier-to-name desired-name)))
     (cffi:with-foreign-objects ((output-cred-handle :pointer)
                                 (time-rec 'om-uint32))
