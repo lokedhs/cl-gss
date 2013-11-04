@@ -40,7 +40,6 @@
 (constant (gss-s-call-inaccessible-write "GSS_S_CALL_INACCESSIBLE_WRITE"))
 (constant (gss-s-call-bad-structure "GSS_S_CALL_BAD_STRUCTURE"))
 
-
 (constant (gss-s-bad-mech "GSS_S_BAD_MECH"))
 (constant (gss-s-bad-name "GSS_S_BAD_NAME"))
 (constant (gss-s-bad-nametype "GSS_S_BAD_NAMETYPE"))
