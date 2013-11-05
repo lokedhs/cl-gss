@@ -1,5 +1,5 @@
-cl-gss - Common Lisp bindings for GSS-API
-=========================================
+cl-gss - Common Lisp bindings for GSSAPI
+========================================
 
 Author contact information
 --------------------------
@@ -10,13 +10,21 @@ Author contact information
 Summary
 -------
 
-GSS-API is a standard API to access different security services. The
-current version of this library currently only supports Kerberos
-authentication. Since Active Directory uses Kerberos, that should work
-too.
+GSSAPI is an API which is designed to provide a standard API to
+authentication services. The API itself is generic, and the system can
+provide different underlying implementations. The most common one is
+Kerberos, which has several implementations, the most common of which
+is probably Active Directory.
 
 Wikipedia has a more complete summary of GSS-API:
 https://en.wikipedia.org/wiki/GSSAPI
+
+Attempts has been made to make this API fit fell into the Common Lisp
+style, and also to work around some of the incompatibilities between
+different implementations. However, there are several functionalities
+that are not implemented, but these functions are generally not used
+much. If you are missing something, please let me know, or better yet,
+send a patch.
 
 Examples
 --------
