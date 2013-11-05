@@ -23,7 +23,6 @@
 
 (constant (gss-c-no-name "GSS_C_NO_NAME"))
 (constant (gss-c-no-buffer "GSS_C_NO_BUFFER"))
-;(constant (gss-c-no-oid "GSS_C_NO_OID"))
 (constant (gss-c-no-oid-set "GSS_C_NO_OID_SET"))
 (constant (gss-c-no-context "GSS_C_NO_CONTEXT"))
 (constant (gss-c-no-credential "GSS_C_NO_CREDENTIAL"))
