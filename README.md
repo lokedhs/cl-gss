@@ -19,7 +19,7 @@ is probably Active Directory.
 Wikipedia has a more complete summary of GSS-API:
 https://en.wikipedia.org/wiki/GSSAPI
 
-Attempts has been made to make this API fit fell into the Common Lisp
+Attempts has been made to make this API fit well into the Common Lisp
 style, and also to work around some of the incompatibilities between
 different implementations. However, there are several functionalities
 that are not implemented, but these functions are generally not used
