@@ -126,6 +126,7 @@ describing each mechanism."
              ,@body))))))
 
 (defun oid-to-string (oid)
+  "Return a string representation for the given OID."
   (check-type oid vector)
   (with-oid-buffer (oid-ref oid)
     (cffi:with-foreign-objects ((result '(:struct gss-buffer-desc)))
@@ -147,6 +148,7 @@ describing each mechanism."
         (gss-call m (gss-release-buffer m result))))))
 
 (defun string-to-oid (string)
+  "Convert a string representation of an OID to a byte array."
   (check-type string string)
   (cffi:with-foreign-string ((foreign-name-string foreign-name-string-length) string)
     (cffi:with-foreign-objects ((buf '(:struct gss-buffer-desc))
