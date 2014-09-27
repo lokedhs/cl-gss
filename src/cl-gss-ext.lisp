@@ -1,7 +1,5 @@
 (in-package :cl-gss)
 
-(declaim #.*compile-decl*)
-
 (defun conv-usage-to-foreign (usage)
   "Given a usage keyword, return the corresponding native value."
   (ecase usage

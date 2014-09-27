@@ -1,7 +1,5 @@
 (in-package :cl-gss)
 
-(declaim #.*compile-decl*)
-
 (defmacro gss-call (minor-sym form)
   (check-type minor-sym symbol)
   (let ((status-sym (gensym "STATUS-")))

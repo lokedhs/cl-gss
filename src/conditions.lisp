@@ -1,7 +1,5 @@
 (in-package :cl-gss)
 
-(declaim #.*compile-decl*)
-
 (define-condition gss-error (error)
   ((major-errors :type list
                  :initarg :major-errors

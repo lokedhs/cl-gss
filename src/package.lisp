@@ -22,8 +22,3 @@
            #:oid-to-string
            #:string-to-oid
            #:context-time))
-
-(in-package :cl-gss)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter *compile-decl* '(optimize (speed 0) (safety 3) (debug 3))))

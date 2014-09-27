@@ -1,7 +1,5 @@
 (in-package :cl-gss)
 
-(declaim #.*compile-decl*)
-
 (cffi:define-foreign-library libgssapi
   (:darwin "libgssapi_krb5.dylib")
   (:unix (:or "libgssapi_krb5.so" "libgss.so")))
