@@ -2,6 +2,7 @@
 
 (cffi:define-foreign-library libgssapi
   (:darwin "libgssapi_krb5.dylib")
+  ((:and :sunos :x86-64) (:or "/usr/lib/64/gss/mech_krb5.so" "libgss.so"))
   (:unix (:or "libgssapi_krb5.so" "libgss.so")))
 
 (cffi:use-foreign-library libgssapi)
