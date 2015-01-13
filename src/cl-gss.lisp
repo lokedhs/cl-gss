@@ -281,7 +281,7 @@ Return values are:
           possible flags: :DELEG, :MUTUAL, :REPLAY, :SEQUENCE, :CONF, :INTEG, :ANON
   TIME-REC - The length of time that the context will be valid.
   DELEGATED-CRED-HANDLE - If the FLAGS value contains :DELEG, this value contains
-                          the delegated credentials, an instance of the type CRED"
+                          the delegated credentials, an instance of CRED"
 
   (check-type buffer vector)
   (check-type context (or null context))
