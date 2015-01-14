@@ -1,10 +1,18 @@
 (in-package :cl-gss)
 
 (define-condition gss-error (error)
-  ((major-errors :type list
+  ((major        :type integer
+                 :initarg :major
+                 :reader gss-error-major
+                 :documentation "Major status")
+   (major-errors :type list
                  :initarg :major-errors
                  :reader gss-error-major-messages
                  :documentation "List of major error messages")
+   (minor        :type integer
+                 :initarg :minor
+                 :reader gss-error-minor
+                 :documentation "Minor status")
    (minor-errors :type list
                  :initarg :minor-errors
                  :reader gss-error-minor-messages
@@ -18,7 +26,11 @@
 (defun raise-error (major minor minor-mech-oid)
   (destructuring-bind (major-messages minor-messages)
       (errors-as-string major minor minor-mech-oid)
-    (error 'gss-error :major-errors major-messages :minor-errors minor-messages)))
+    (error 'gss-error
+           :major major
+           :major-errors major-messages
+           :minor minor
+           :minor-errors minor-messages)))
 
 (defun calling-error-p (code)
   (not (zerop (logand code (ash gss-c-calling-error-mask gss-c-calling-error-offset)))))

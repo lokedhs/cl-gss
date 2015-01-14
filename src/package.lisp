@@ -21,4 +21,6 @@
            #:acquire-cred
            #:oid-to-string
            #:string-to-oid
-           #:context-time))
+           #:context-time
+           #:gss-error-major
+           #:gss-error-minor))
