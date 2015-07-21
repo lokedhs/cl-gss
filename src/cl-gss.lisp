@@ -191,7 +191,7 @@ the functionality of the GSSAPI function `gss_compare_name'."
       gss-c-no-context))
 
 (defun context-time (context)
-  "Returns the time from CONTEXT.
+  "Return time that the context will be valid, in seconds.
 This function implements the functionality of the GSSAPI function `gss_context_time'."
   (check-type context context)
   (cffi:with-foreign-objects ((time-rec 'om-uint32))
