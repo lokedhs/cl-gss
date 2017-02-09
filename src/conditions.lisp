@@ -73,4 +73,3 @@
           (if (and minor-status minor-mech-oid (error-p minor-status))
               (extract-error-message minor-status gss-c-mech-code minor-mech-oid)
               nil))))
-
